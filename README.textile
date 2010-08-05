@@ -1,0 +1,11 @@
+h1. SwineHerd
+
+A "swineherd":http://en.wikipedia.org/wiki/Swineherd with a magic ruby to make pig fly.
+
+...
+
+maybe come back later?
+        
+<pre><code>
+pigs-fly --maybe --output=/output_data --schema=/erb_load_schema some_pig_script.pig.erb
+</code></pre>

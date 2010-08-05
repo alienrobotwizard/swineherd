@@ -1,0 +1,10 @@
+-- Example: I want to use existing data but I want all
+--          my tables to be pre-loaded, my parameters
+--          already specified, i don't want to handle inputs and outputs at all!
+
+out_node   = FOREACH a_follows_b GENERATE user_a_id;
+out_group  = GROUP out_node BY user_a_id;
+out_degree = FOREACH out_group GENERATE group AS node, COUNT(out_node) AS out_deg;
+
+-- Just have to dump this at the end of every one...
+STORE out_degree INTO '<%= Settings.output %>';
