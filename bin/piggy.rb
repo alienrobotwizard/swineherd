@@ -29,7 +29,7 @@ Settings.define :pig_classpath,   :default => '/etc/hadoop/conf',            :en
 Settings.define :java_home,       :default => '/usr/lib/jvm/java-6-sun/jre', :env_var => 'JAVA_HOME',       :description => 'Path to java installation'
 Settings.define :pig_log_dir,     :default => '/usr/local/share/pig/logs',   :env_var => 'PIG_LOG_DIR',     :description => 'Place log files go'
 Settings.define :pig_log_file,    :default => 'pig.log',                     :env_var => 'PIG_LOG_FILE',    :description => ''
-Settings.define :pig_root_logger, :default => 'INFO,console',                :env_var => 'PIG_ROOT_LOGGER', :description => 'The root appender, can this be more descriptive?'
+Settings.define :pig_root_logger, :default => 'INFO,console,DRFA',           :env_var => 'PIG_ROOT_LOGGER', :description => 'The root appender, can this be more descriptive?'
 Settings.define :config,          :default => '/usr/local/share/pig/conf',                                  :description => 'Configuration directory'
 Settings.define :pig_opts,                                                   :env_var => 'PIG_OPTS',        :description => 'Further options for pig'
 Settings.define :debug,                                                                                     :description => 'Run in debug mode'
@@ -71,16 +71,20 @@ classpath << options[:pig_classpath]
 # Initialize pig_opts with env values, and defaults
 #
 pig_opts = [options[:pig_opts]]
-pig_opts << "-Dpig.log.dir=#{options[:pig_log_dir]}"
-pig_opts << "-Dpig.log.file=#{options[:pig_log_file]}"
-pig_opts << "-Dpig.home.dir=#{options[:pig_home]}"
-pig_opts << "-Dpig.root.logger=#{options[:pig_root_logger]}"
+pig_opts << "-Dpig\.log\.dir=#{options[:pig_log_dir]}"
+pig_opts << "-Dpig\.log\.file=#{options[:pig_log_file]}"
+pig_opts << "-Dpig\.home\.dir=#{options[:pig_home]}"
+pig_opts << "-Dpig\.root\.logger=#{options[:pig_root_logger]}"
+
 
 #
 # Go pig, go!
 #
+# FIXME: something is strange with the escaping, looks great on debug though...
+#
 if options[:debug] == true
-  system('echo',java,options[:pig_heap_size],pig_opts.join(' '), '-classpath', classpath.join(':'), pig_main_class, other_args)
+  system('echo',java,options[:pig_heap_size],pig_opts.join(' '), '-classpath', classpath.join(':'), pig_main_class, *ARGV)
 else
-  system(java,options[:pig_heap_size],pig_opts.join(' '), '-classpath', classpath.join(':'), pig_main_class, *ARGV)
+  system('echo', java, options[:pig_heap_size], pig_opts.join(' '), '-classpath', classpath.join(':'), pig_main_class, *ARGV)
+  system(java, options[:pig_heap_size], pig_opts.join(' '), "-classpath", classpath.join(':'), pig_main_class, *ARGV)
 end  
