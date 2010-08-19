@@ -17,7 +17,6 @@ require 'swineherd/hdfs'
 #   })
 #
 
-
 module Swineherd
   module PigTask
     #
@@ -25,10 +24,10 @@ module Swineherd
     #
     def self.run_pig_job job_name, script, options
       task job_name do
-        system('echo', '../../bin/piggy.rb', *[pig_args(options), script].flatten) if check_outputs(options[:outputs])
+        system('../../bin/pigsy.rb', '--pig_classpath=/usr/lib/pig', *[pig_args(options), script].flatten) if check_outputs(options[:outputs])
       end
     end
-    
+
     #
     # Needs to return true if no outputs exist, false otherwise,
     # raise error if some do and some dont

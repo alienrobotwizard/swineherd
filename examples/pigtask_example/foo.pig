@@ -1,1 +1,0 @@
-data = LOAD '$IN' AS (c1:int, c2:int, c3:int);head = LIMIT data $N;STORE head INTO '$OUT';
