@@ -9,3 +9,28 @@ maybe come back later?
 <pre><code>
 pigs-fly --maybe --output=/output_data --schema=/erb_load_schema some_pig_script.pig.erb
 </code></pre>
+
+
+Right now you need 3 things to create a pig script in this frameworks:
+
+1. Need to write the body of the pig script and define an output
+2. Need to create a schema for the data you want to load, may as well
+   load all possible tables
+3. A ruby runner script
+
+schema_file: this contains object definitions with load statements
+. when this is run you must define path_to_object
+
+object1 = LOAD '<%= path_to_object1 %>' AS (<%= Object1.to_pig %>);
+object2 = LOAD '<%= path_to_object2 %>' AS (<%= Object2.to_pig %>);
+...
+and so on
+
+
+
+
+
+
+h3. hmmm, a pig runner
+
+sudo ln -s /path/to/piggy.rb /path/to/pig/bin/piggy.rb
