@@ -1,7 +1,6 @@
-#!/usr/bin/env ruby
-
 require 'erubis'
 require 'tempfile'
+require 'swineherd/hdfs'
 
 #
 # Usage: PigScript.new(source, options).run
@@ -19,6 +18,7 @@ module Swineherd
     end
 
     def run
+      return unless check_outputs(pig_options[:outputs])
       compile!
       execute
     end
@@ -41,6 +41,22 @@ module Swineherd
       run_opts
     end    
 
+    #
+    # FIXME: this is nasty, need better local file checking
+    #
+    def check_outputs outputs
+      all_clear = true
+      case @run_options[:mode]
+      when 'local' then
+        outputs.each do |path|
+          all_clear = false if File.exist?(path)
+        end
+      when 'mapreduce' then
+        all_clear = Hfile.check_paths(outputs)
+      end
+      all_clear
+    end
+    
     #
     # "pigsy.rb" is the superior runner to "pig", put it in your path
     #

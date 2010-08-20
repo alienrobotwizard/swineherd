@@ -32,6 +32,18 @@ module Swineherd
     def self.rm target
       system %Q{hadoop fs -rm #{target}}
     end
+
+    #
+    # Needs to return true if no outputs exist, false otherwise,
+    # raise error if some do and some dont
+    #
+    def self.check_paths paths
+      exist_count   = 0 # no outputs exist
+      paths.each{|hdfs_path| exist_count += 1 if exist?(hdfs_path) }
+      raise "Indeterminate output state" if (exist_count > 0) && (exist_count < paths.size)
+      return true if exist_count == 0
+      false
+    end
     
   end
   

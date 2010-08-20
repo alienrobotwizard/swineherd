@@ -27,11 +27,7 @@ module Swineherd
     # raise error if some do and some dont
     #
     def self.check_outputs outputs
-      exist_count   = 0 # no outputs exist
-      outputs.values.each{|hdfs_path| exist_count += 1 if Hfile.exist?(hdfs_path) }
-      raise "Indeterminate output state" if (exist_count > 0) && (exist_count < outputs.values.size)
-      return true if exist_count == 0
-      false
+      Hfile.check_paths(outputs.values)
     end
 
     def self.pig_args options

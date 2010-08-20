@@ -15,7 +15,8 @@ end
 
 options = {
   :graph       => 'seinfeld_network.tsv',
-  :degree_dist => '/tmp/degree_dist'
+  :degree_dist => '/tmp/degree_dist',
+  :outputs     => ['/tmp/degree_dist']
 }
     
 PigScript.new('degree_distribution.pig.erb', options, :mode => 'local').run
