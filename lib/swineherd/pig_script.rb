@@ -10,11 +10,12 @@ require 'tempfile'
 module Swineherd
   
   class PigScript
-    attr_accessor :source_template, :pig_options
+    attr_accessor :source_template, :pig_options, :run_options
 
-    def initialize source_template, pig_options
+    def initialize source_template, pig_options, run_options = {}
       @pig_options     = pig_options
       @source_template = source_template
+      @run_options     = run_options
     end
 
     def run
@@ -32,12 +33,20 @@ module Swineherd
       dest
     end
 
+    def run_options
+      run_opts = ""
+      @run_options.each do |option,value|
+        run_opts << "--#{option.to_s}=#{value}"
+      end
+      run_opts
+    end    
+
     #
     # "pigsy.rb" is the superior runner to "pig", put it in your path
     #
     def execute
-      dest.read # wtf? why is this necessary, to late at night for me...
-      system('pigsy.rb', '--pig_classpath=/usr/local/share/hadoop/conf', dest.path)
+      dest.read
+      system('pigsy.rb', run_options, dest.path)
     end
 
     protected

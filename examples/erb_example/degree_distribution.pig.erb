@@ -1,0 +1,7 @@
+adj_pairs  = LOAD '<%= graph %>' AS (<%= AdjPair.to_pig %>);
+out_node   = FOREACH adj_pairs GENERATE $0 AS node;
+in_node    = FOREACH adj_pairs GENERATE $1 AS node;
+grouped    = COGROUP out_node BY node, in_node BY node;
+degrees    = FOREACH grouped GENERATE group AS node, COUNT(out_node) + COUNT(in_node) AS degree;
+
+STORE degrees INTO '<%= degree_dist %>';

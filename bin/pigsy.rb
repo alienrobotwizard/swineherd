@@ -37,6 +37,7 @@ Settings.define :pig_root_logger, :default => 'INFO,console,DRFA',           :en
 Settings.define :config,                                                                                    :description => 'Configuration directory'
 Settings.define :pig_opts,                                                   :env_var => 'PIG_OPTS',        :description => 'Further options for pig'
 Settings.define :debug,                                                                                     :description => 'Run in debug mode'
+Settings.define :mode,            :default => 'mapreduce',                                                  :description => '(local|mapreduce)'
 
 Settings.resolve!
 options = Settings.dup
@@ -117,4 +118,4 @@ end
 #
 # Go pig, go!
 #
-run_with_args(java, options[:pig_heap_size], pig_opts, "-classpath", classpath.join(':'), pig_main_class, options.rest)
+run_with_args(java, options[:pig_heap_size], pig_opts, "-classpath", classpath.join(':'), pig_main_class, "-x", options[:mode], options.rest.reject{|x| x.blank?})
