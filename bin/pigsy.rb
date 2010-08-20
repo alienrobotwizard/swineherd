@@ -106,13 +106,9 @@ pig_opts << "-Dpig.root.logger=#{options[:pig_root_logger]}"
 
 
 def run_with_args command, *args
-  begin
-    args = args.flatten.compact
-    # Log.info [command, *args].join(' ')
-    system(command, *args)
-  rescue StandardError => e
-    raise e
-  end
+  args = args.flatten.compact
+  # Log.info [command, *args].join(' ')
+  system(command, *args)
 end
 
 #

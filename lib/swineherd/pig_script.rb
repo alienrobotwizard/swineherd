@@ -46,12 +46,11 @@ module Swineherd
     #
     def check_outputs outputs
       all_clear = true
-      case @run_options[:mode]
-      when 'local' then
+      if @run_options[:mode] == 'local'
         outputs.each do |path|
           all_clear = false if File.exist?(path)
         end
-      when 'mapreduce' then
+      else
         all_clear = Hfile.check_paths(outputs)
       end
       all_clear
