@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'erubis'
+require 'tempfile'
 
 #
 # Usage: PigScript.new(source, options).run
@@ -22,27 +23,27 @@ module Swineherd
     end
 
     def basename
-      File.basename(source_filename).gsub(".erb", "")
+      File.basename(source_template)
     end
 
     def compile!
-      dest << source.result(binding()) # or use hash
+      dest << Erubis::Eruby.new(source).result(pig_options)
       dest << "\n"
       dest
     end
 
-    def path
-      compiled_file.path
-    end
-
+    #
+    # "pigsy.rb" is the superior runner to "pig", put it in your path
+    #
     def execute
-      system('../../bin/pigsy.rb', '--pig_classpath=/usr/lib/pig', dest)
+      dest.read # wtf? why is this necessary, to late at night for me...
+      system('pigsy.rb', '--pig_home=/usr/local/share/pig', '--pig_classpath=/usr/local/share/hadoop/conf', dest.path)
     end
 
     protected
 
     def source
-      File.open(source_filename).read
+      File.open(source_template).read
     end
 
     def dest
