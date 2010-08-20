@@ -1,38 +1,53 @@
 #!/usr/bin/env ruby
 
-# require 'erb'
+require 'erubis'
 
 #
-# FIXME: this should allow for using erb templates for
-# pig scripts
+# Usage: PigScript.new(source, options).run
 #
-
-# options = {
-#   :script_name   => 'foo.pig',
-#   :erb_templates => {
-#   }
-# }
 
 module Swineherd
+  
   class PigScript
+    attr_accessor :source_template, :pig_options
 
-    attr_accessor :script_name
-    
-    PIG_SCRIPT_DIR = '/tmp/swineherd'
-    
-    def initialize script_name, options = {}
-      @script_name = script_name
+    def initialize source_template, pig_options
+      @pig_options     = pig_options
+      @source_template = source_template
     end
 
-    def inscribe! &blk
-      File.open(script_name, 'w') do |f|
-        yield f
-      end      
+    def run
+      compile!
+      execute
     end
 
-    def execute!      
+    def basename
+      File.basename(source_filename).gsub(".erb", "")
     end
-    
+
+    def compile!
+      dest << source.result(binding()) # or use hash
+      dest << "\n"
+      dest
+    end
+
+    def path
+      compiled_file.path
+    end
+
+    def execute
+      system('../../bin/pigsy.rb', '--pig_classpath=/usr/lib/pig', dest)
+    end
+
+    protected
+
+    def source
+      File.open(source_filename).read
+    end
+
+    def dest
+      return @dest if @dest
+      @dest ||= Tempfile.new(basename)
+    end
   end
-
 end
