@@ -18,14 +18,7 @@ require 'swineherd' ; include Swineherd
 # be an existing script on disk.
 #
 
-script = PigScript.new('foo.pig')
-script.inscribe! do |s|
-  s << "data = LOAD '$IN' AS (c1:int, c2:int, c3:int);"
-  s << "head = LIMIT data $N;"
-  s << "STORE head INTO '$OUT';"
-end
-
-PigTask.run_pig_job(:foobar, script.script_name,
+PigTask.run_pig_job(:foobar, '/path/to/pig_script.pig',
   {
     :inputs => {
       :in => "foo.tsv"
@@ -47,8 +40,22 @@ The above example defines a rake task called <pre><code>foobar</code></pre>. The
 
 and watch it go.
 
+h3. ERB example
+
+You can also use the PigScript class which allows you to use eruby templates like this:
+
+<pre><code>
+    require 'swineherd' ; include Swineherd
+
+    PigScript.new('foo.pig.erb', {:key => value}).run
+    
+</code></code>
+
+Here a pig script is created, the values of the passed in options hash are substituted into the erb template, and the pig script is ran.
+
 h3. Features
 
 * Code dependent pig jobs using rake
 * Sane handling of options
 * Check all outputs, don't run at all if they exist
+* Write your pig scripts using erb templates
