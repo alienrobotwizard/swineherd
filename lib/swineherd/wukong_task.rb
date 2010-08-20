@@ -15,7 +15,7 @@ module Swineherd
         system(
           ruby_interpreter_path,
           script, '--run',
-          wukong_options(options),
+          wukong_options(options[:extra_wukong_args]),
           options[:inputs].join(","),
           options[:output]
           ) if !Hfile.exist?(options[:output])
@@ -24,7 +24,6 @@ module Swineherd
 
     def self.wukong_options options
       options.
-        reject{|param,val| (param.to_s == 'output') || (param.to_s == 'inputs') }.
         map{|param,val| "--#{param}=#{val}"}.
         join(" ")
     end
