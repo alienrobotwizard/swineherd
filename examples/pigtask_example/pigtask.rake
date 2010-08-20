@@ -4,27 +4,17 @@
 require 'swineherd' ; include Swineherd
 
 #
-# Here we use the pig_script class to create
-# a new pig script to run. Alternatively, there could
-# be an existing script on disk.
+# The following expects a pig script, 'foo.pig', to
+# exist. Results in:
 #
-
-script = PigScript.new('foo.pig')
-script.inscribe! do |s|
-  s << "data = LOAD '$IN' AS (c1:int, c2:int, c3:int);"
-  s << "head = LIMIT data $N;"
-  s << "STORE head INTO '$OUT';"
+# piggy.rb -p IN=foo.tsv -p OUT=/tmp/foo.tsv -p N=1L foo.pig
+#
+# And is executed when you do:
+#
+# rake -f pigtask.rake foopig
+#
+PigTask.new_pig_task(:foopig, 'foo.pig') do |options|
+  options[:inputs]           = {:in  => 'foo.tsv'}
+  options[:outputs]          = {:out => '/tmp/foo.tsv'}
+  options[:extra_pig_params] = {:n   => '1L'}
 end
-
-PigTask.run_pig_job(:foobar, script.script_name,
-  {
-    :inputs => {
-      :in => "foo.tsv"
-    },
-    :outputs => {
-      :out => "/tmp/foo.tsv"
-    },
-    :extra_pig_params => {
-      :n => '1L'
-    }
-  })

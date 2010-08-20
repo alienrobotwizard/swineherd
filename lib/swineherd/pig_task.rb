@@ -1,30 +1,24 @@
 #!/usr/bin/env ruby
 require 'swineherd/hdfs'
 
-#
-# Example usage:
-#
-# PigTask.run_pig_job(:foobar, "foo.pig",
-#   {
-#     :inputs => {
-#       :in => "jobs.schedule"
-#     },
-#     :outputs => {
-#       :out => "/tmp/jobs.schedule"
-#     },
-#     :extra_pig_params => {
-#     }
-#   })
-#
-
 module Swineherd
   module PigTask
     #
-    # Does the actual running of the pig job
-    #
-    def self.run_pig_job job_name, script, options
+    # The use case here is really for existing scripts that are not erb templates.
+    # Use the PigScript class if you are coding from scratch.
+    #    
+    def self.new_pig_task job_name, script
       task job_name do
-        system('../../bin/pigsy.rb', '--pig_classpath=/usr/lib/pig', *[pig_args(options), script].flatten) if check_outputs(options[:outputs])
+        options = {
+          :inputs => {    # input data files
+          },
+          :outputs => {   # output data files, will be checked for existence
+          },
+          :extra_pig_params => { # other params
+          }
+        }
+        yield options
+        system('pigsy.rb', *[pig_args(options), script].flatten) if check_outputs(options[:outputs])
       end
     end
 

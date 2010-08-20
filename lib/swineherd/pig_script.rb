@@ -37,7 +37,7 @@ module Swineherd
     #
     def execute
       dest.read # wtf? why is this necessary, to late at night for me...
-      system('pigsy.rb', '--pig_home=/usr/local/share/pig', '--pig_classpath=/usr/local/share/hadoop/conf', dest.path)
+      system('pigsy.rb', '--pig_classpath=/usr/local/share/hadoop/conf', dest.path)
     end
 
     protected

@@ -1,44 +1,41 @@
 h1. SwineHerd
 
-A "swineherd":http://en.wikipedia.org/wiki/Swineherd with a magic ruby to make pig fly.
+Swineherd enhances the brute power of Apache Pig with the elegance and flexibility of Ruby.
 
-Swineherd allows you to write rake tasks to run pig scripts.
+h2. Core features
 
-h3. Cooked Example
+* Easily write idempotent and dependent pig jobs using rake
+* Write pig scripts using eruby templates
+
+h3. Rake Example
+
+You can use the PigTask class to define rake tasks that understand how to talk to Pig. And, since it's still rake, these tasks can play nicely with any other rake tasks in your workflow.
 
 <pre><code>
-#
-# Example of creating a pig_task with swineherd
-#
+
 require 'swineherd' ; include Swineherd
 
-#
-# Here we use the pig_script class to create
-# a new pig script to run. Alternatively, there could
-# be an existing script on disk.
-#
+PigTask.new_pig_task(:foopig, 'foo.pig') do |options|
+  options[:inputs]           = {:in  => 'foo.tsv'}
+  options[:outputs]          = {:out => '/tmp/foo.tsv'}
+  options[:extra_pig_params] = {:n   => '1L'}
+end
 
-PigTask.run_pig_job(:foobar, '/path/to/pig_script.pig',
-  {
-    :inputs => {
-      :in => "foo.tsv"
-    },
-    :outputs => {
-      :out => "/tmp/foo.tsv"
-    },
-    :extra_pig_params => {
-      :n => '1L'
-    }
-  })
 </code></pre>
 
-The above example defines a rake task called <pre><code>foobar</code></pre>. Then, from the command-line, do:
+The above example defines a new rake task called foobar. To run it, simply do:
 
 <pre><code>
-    rake -f pigtask.rake foobar
+    rake -f /path/to/rakefile foopig
 </code></pre>
 
 and watch it go.
+
+Dependencies are easy too:
+
+<pre><code>
+task :foopig => [:other_task1, :other_task2]
+</code></pre>
 
 h3. ERB example
 
@@ -49,7 +46,7 @@ You can also use the PigScript class which allows you to use eruby templates lik
 
     PigScript.new('foo.pig.erb', {:key => value}).run
     
-</code></code>
+</code></pre>
 
 Here a pig script is created, the values of the passed in options hash are substituted into the erb template, and the pig script is ran.
 
@@ -59,3 +56,14 @@ h3. Features
 * Sane handling of options
 * Check all outputs, don't run at all if they exist
 * Write your pig scripts using erb templates
+
+
+h3. Why?
+
+Simply, Pig needs more buttons.
+
+* A Pig script should play nicely with other tasks in a data workflow
+* A Pig script should not run if the output data is already there, but pass to the next task
+* Passing in options should be much easier
+* Pig doesn't have an "include" statement
+* A minor change in a data model shouldn't require rewriting of every pig script in a workflow
