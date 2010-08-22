@@ -1,0 +1,140 @@
+h1. Azkaban + Swineherd
+
+Swinherd allows you to express a detailed set of pig (and wukong?) tasks with dependencies quickly and easily. Azkaban allows you to bundle those tasks into a single workflow and schedule its execution.
+
+h2. Pagerank, An Example
+
+Due to its iterative method of calculation pagerank can be quite cumbersome to run on a hadoop cluster.
+What happens if, after 15 iterations in a 50 iteration run, nodes go down and the job fails? Well, you
+can either rerun from the beginning (easy) and hope for better luck, or, manually find the last
+iteration that completed and rerun from there (awful). No one (except a robot) wants to babysit running jobs on a
+cluster. What's more, is that it's often the case that pagerank (or any other long running calculation)
+is only the first step in a multistep workflow. There must be a better way!
+
+h3. Solution Outline
+
+First, we'll express the entire set of pig jobs used to calculate pagerank as rake tasks using Swineherd. Then all we
+have to do is write a very simple Azkaban job to run it and we're done!
+
+h3. Swineherd
+
+Pagerank can be naturally decomposed into two steps.
+
+* Initialization
+* Iteration
+
+h4. Initialization
+
+In the initialization step we take an input dataset of the form (vertex_i,vertex_j) and turn it into an augemented
+adjacency list of the form (vertex_i, initial_rank, vertex_list) where "initial_rank" is the initial pagerank of
+vertex_i and "vertex_list" is a list of vertices that vertex_i has outgoing links to. See the example pig.erb script
+for the gory details. Here it is expressed as a swineherd task:
+
+<pre><code>
+task :pagerank_initialize do
+  data_path     = File.dirname(__FILE__)+"/../data"
+  template_path = File.dirname(__FILE__)+"/../templates"
+  script_options = {
+    :edge_set     => options[:edge_set],
+    :initial_rank => 1.0, # initial value of pr to send to all outlinks
+    :outputs      => [File.join(data_path, "#{options[:azk_run_id]}/pagerank_graph_0")] # in this case there is only one output
+  }
+  script_template = File.join(template_path, "pagerank_initialize.pig.erb")
+  PigScript.new(script_template, script_options, :mode => 'local').run # run in local mode for example
+end
+</code></pre>
+
+That's everything needed to specify a full pig job. And here's where all those options are coming from:
+
+<pre><code>
+Settings.define :azk_run_id,          :env_var => 'AZK_RUN_ID',     :required => true, :description => 'An id unique to this run of the entire workflow, see README'
+Settings.define :edge_set,            :env_var => 'EDGE_SET',       :required => true, :description => 'Full path to input edge set for calculation'
+Settings.define :pagerank_iterations, :env_var => 'PAGERANK_ITERS', :required => true, :description => 'Number of iterations to run pagerank'
+
+Settings.resolve!
+options = Settings.dup
+</code></pre>
+
+Notice how the options are read from environment variables. These are set by Azkaban as we'll see in a moment. Also, here we specify
+a "run_id". This is intended to be a unique id to specify the entire pagerank workflow such that, if I rerun it tomorrow morning, it
+skips over anything that has already ran (this skipping is part of swineherd itself) and runs only what still needs finished. The
+actual logic of HOW this id is chosen depends on the use case.
+
+h4. Iteration
+
+In the interation we take as input the output of the previous iteration (or initialization if it's the first time). This should be a
+data set of the form (vertex_i, rank, vertex_list). All this step does is take "rank" and distribute it amongst the "vertex_list".
+See the provided pig.erb template for details. Expressed as a swineherd task:
+
+<pre><code>
+#
+# Run pagerank some number of times, outputs that exist are simply
+# not ran
+#
+task :pagerank_iterate do
+  options[:pagerank_iterations].to_i.times do |n|
+    one_pagerank_iteration n, n+1
+  end  
+end
+
+#
+# Just runs one iteration of pagerank, politely passing if already done
+#
+def one_pagerank_iteration prev_iter, next_iter
+  options = Settings.dup
+  data_path     = File.dirname(__FILE__)+"/../data"
+  template_path = File.dirname(__FILE__)+"/../templates"
+  script_options = {
+    :damping_factor => 0.95, # strictly in [0,1.0]
+    :current_file   => File.join(data_path,  "#{options[:azk_run_id]}/pagerank_graph_#{prev_iter}"),
+    :outputs        => [File.join(data_path, "#{options[:azk_run_id]}/pagerank_graph_#{next_iter}"),]
+  }
+  script_template = File.join(template_path, "pagerank.pig.erb")
+  PigScript.new(script_template, script_options, :mode => 'local').run
+end
+
+</code></pre>
+
+And here's where the idempotency really comes in handy. You've already ran 10 iterations and you want to run 10 more?
+Easy! Just change the number of iterations and rerun. Swinherd will calmly skip all iterations that have already been ran.
+
+
+And now we're ready to write our Azkaban job. You should see the full example rake file, pagerank.rake, before going proceeding. 
+
+h3. Azkaban
+
+The hard part's over, now we just need to hire a robot slave to do our work for us.
+
+h4. Azkaban properties
+
+It's so simple, it requires no explanation
+
+<pre><code>
+# pagerank.properties
+#
+# Here we specifiy all the options we'll pass to the rake task
+#
+env.AZK_RUN_ID=pagerank_12345
+env.EDGE_SET=data/seinfeld_network.tsv      
+env.PAGERANK_ITERS=5
+</code></pre>
+
+h4. Azkaban job
+
+Here all we're going to do is shell out to the rake task:
+
+<pre><code>
+#
+# Just call our rake task
+#
+type=command
+command=rake -f rake_tasks/pagerank.rake pagerank_iterate
+</code></pre>
+
+And we're done.
+
+h3. Run it!
+
+Everything should be in order now, just fire up the Azkaban server use this directory as your job dir, log in via the web interface, and ...
+
+CLICK THE RUN BUTTON.

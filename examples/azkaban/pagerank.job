@@ -1,0 +1,5 @@
+#
+# Just call our rake task
+#
+type=command
+command=rake -f rake_tasks/pagerank.rake pagerank_iterate

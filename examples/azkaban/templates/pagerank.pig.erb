@@ -1,0 +1,18 @@
+%default DAMP   <%= damping_factor %>f
+        
+pr_list = LOAD '<%= current_file %>' AS (v1:chararray, rank:float, vertices:bag { link:tuple (v2:chararray) });
+pr_s    = FOREACH pr_list GENERATE FLATTEN(vertices) AS v, (float)(rank / (float)COUNT(vertices)) AS share;
+pr_l    = FOREACH pr_list GENERATE v1 AS v, vertices;
+rcvd    = COGROUP pr_l BY v INNER, pr_s BY v;
+rcvd_fg = FOREACH rcvd {
+            raw_rank    = (float)SUM(pr_s.share);
+            -- treat the case that a node has no in links                   
+            damped_rank = ((raw_rank IS NOT NULL AND raw_rank > 1.0e-12f) ? raw_rank*$DAMP + 1.0f - $DAMP : 0.0f);
+            GENERATE
+              group         AS v,
+              damped_rank   AS rank,
+              FLATTEN(pr_l.vertices) -- hack, should only be one bag, unbag it
+            ;
+          };
+
+STORE rcvd_fg INTO '<%= outputs.first %>';
