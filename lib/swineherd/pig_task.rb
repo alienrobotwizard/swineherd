@@ -18,7 +18,7 @@ module Swineherd
           }
         }
         yield options
-        system('pigsy.rb', *[pig_args(options), script].flatten) if check_outputs(options[:outputs])
+        exec('pigsy.rb', *[pig_args(options), script].flatten) if check_outputs(options[:outputs])
       end
     end
 

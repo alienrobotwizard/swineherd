@@ -61,7 +61,7 @@ module Swineherd
     #
     def execute
       dest.read
-      system('pigsy.rb', run_options, dest.path)
+      exec('pigsy.rb', run_options, dest.path)
     end
 
     protected

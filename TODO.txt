@@ -1,1 +1,1 @@
-- A PigScript instance needs to raise an error when it fails
+- PigTask should be able to run in local mode
