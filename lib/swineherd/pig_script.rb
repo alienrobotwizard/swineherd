@@ -7,7 +7,7 @@ require 'swineherd/hdfs'
 #
 
 module Swineherd
-  
+
   class PigScript
     attr_accessor :source_template, :pig_options, :run_options
 
@@ -39,7 +39,7 @@ module Swineherd
         run_opts << "--#{option.to_s}=#{value}"
       end
       run_opts
-    end    
+    end
 
     #
     # FIXME: this is nasty, need better local file checking
@@ -55,12 +55,13 @@ module Swineherd
       end
       all_clear
     end
-    
+
     #
     # "pigsy.rb" is the superior runner to "pig", put it in your path
     #
     def execute
       dest.read
+      system('echo', 'pigsy.rb', run_options, dest.path)
       exec('pigsy.rb', run_options, dest.path)
     end
 

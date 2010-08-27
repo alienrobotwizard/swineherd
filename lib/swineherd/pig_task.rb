@@ -6,7 +6,7 @@ module Swineherd
     #
     # The use case here is really for existing scripts that are not erb templates.
     # Use the PigScript class if you are coding from scratch.
-    #    
+    #
     def self.new_pig_task job_name, script
       task job_name do
         options = {
@@ -18,7 +18,9 @@ module Swineherd
           }
         }
         yield options
-        exec('pigsy.rb', *[pig_args(options), script].flatten) if check_outputs(options[:outputs])
+        run_mode ||= (options[:extra_pig_params][:mode] || 'mapreduce')
+        system('echo', 'pigsy.rb', *["--mode=#{run_mode}", pig_args(options), script].flatten)
+        exec('pigsy.rb', *["--mode=#{run_mode}", pig_args(options), script].flatten) if check_outputs(options[:outputs])
       end
     end
 

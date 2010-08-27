@@ -12,6 +12,14 @@ module Swineherd
           }
         }
         yield options
+        system(
+          'echo',
+          ruby_interpreter_path,
+          script, '--run',
+          wukong_options(options[:extra_wukong_args]),
+          options[:inputs].join(","),
+          options[:output]
+          )
         exec(
           ruby_interpreter_path,
           script, '--run',

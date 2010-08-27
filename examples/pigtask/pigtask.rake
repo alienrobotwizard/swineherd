@@ -16,5 +16,5 @@ require 'swineherd' ; include Swineherd
 PigTask.new_pig_task(:foopig, 'foo.pig') do |options|
   options[:inputs]           = {:in  => 'foo.tsv'}
   options[:outputs]          = {:out => '/tmp/foo.tsv'}
-  options[:extra_pig_params] = {:n   => '1L'}
+  options[:extra_pig_params] = {:n   => '1L', :mode => 'local'}
 end
