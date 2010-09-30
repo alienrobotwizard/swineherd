@@ -1,1 +1,0 @@
-- PigTask should be able to run in local mode
