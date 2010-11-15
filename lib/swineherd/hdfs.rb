@@ -34,6 +34,20 @@ module Swineherd
     end
 
     #
+    # Distributed streaming from input to output
+    #
+    def stream input, output
+     system("${HADOOP_HOME}/bin/hadoop \\
+       jar         ${HADOOP_HOME}/contrib/streaming/hadoop-*streaming*.jar  \\
+       -D          mapred.job.name=\"Swineherd Stream\"                     \\
+       -D          mapred.reduce.tasks=0                                    \\
+       -mapper     \"/bin/cat\"  				            \\
+       -input      \"#{input}\"					            \\
+       -output     \"#{output}\"
+     ")
+    end
+
+    #
     # Needs to return true if no outputs exist, false otherwise,
     # raise error if some do and some dont
     #
