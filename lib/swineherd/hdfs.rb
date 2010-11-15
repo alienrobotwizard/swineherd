@@ -36,7 +36,7 @@ module Swineherd
     #
     # Distributed streaming from input to output
     #
-    def stream input, output
+    def self.stream input, output
      system("${HADOOP_HOME}/bin/hadoop \\
        jar         ${HADOOP_HOME}/contrib/streaming/hadoop-*streaming*.jar  \\
        -D          mapred.job.name=\"Swineherd Stream\"                     \\
