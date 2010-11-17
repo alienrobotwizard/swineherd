@@ -11,7 +11,7 @@ task :stream do
   Settings.input.each do |input|
     bname  = File.basename(input)
     output = File.join(Settings.output, bname)
-    Hfile.stream(input, output) unless HFile.exist?(output)
+    Hfile.stream(input, output) unless Hfile.exist?(output)
   end
 end
 
