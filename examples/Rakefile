@@ -3,7 +3,7 @@ require 'swineherd/hdfs' ; include Swineherd
 require 'configliere'; Configliere.use(:commandline, :env_var, :define)
 
 Settings.define :input, :type => Array
-Settings.define :output, :default => "/tmp/streamed/"
+Settings.define :output, :default => "/tmp/streamed"
 Settings.resolve!
 
 desc "Run hdp-stream-flat on file"
