@@ -43,8 +43,7 @@ module Swineherd
        -D          mapred.reduce.tasks=0                                    \\
        -mapper     \"/bin/cat\"  				            \\
        -input      \"#{input}\"					            \\
-       -output     \"#{output}\"
-     ")
+       -output     \"#{output}\" &")
     end
 
     #
