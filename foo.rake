@@ -130,11 +130,25 @@ module Swineherd
   
 end
 
+# required
+
+#
+# type
+# name
+# script
+# output
+#
+
 # optional
 
-# pig_opts         '-Dmapred.reduce.tasks=100'
-# parameters       {:somedata => '/path/to/somedata'}
-# attributes       {:schema => 'blargh:chararray', :foo => 'bar'}
+#
+# dependencies
+# pig_opts
+# inputs (required when type=wukong)
+# parameters
+# attributes
+#
+
 
 flow = Swineherd::WorkFlow.new(options.flow_id) do |jobs|
 
@@ -142,6 +156,8 @@ flow = Swineherd::WorkFlow.new(options.flow_id) do |jobs|
     type             'pig'
     name             :myjob
     dependencies     [:other_task, :yet_another_task]
+    pig_opts         '-Dmapred.reduce.tasks=100'
+    parameters       ({:foo => 'bar', :this => 'that'})
     script           'dumb_pig_script.pig'
     output           'out1,out2'
   end
@@ -149,4 +165,4 @@ flow = Swineherd::WorkFlow.new(options.flow_id) do |jobs|
   
 end
 
-p flow.jobs[:myjob].cmd
+system "#{flow.jobs[:myjob].cmd}"
