@@ -11,6 +11,7 @@ flow = Swineherd::WorkFlow.new(flow_id) do |jobs|
     dependencies     [:other_task, :yet_another_task]
     pig_opts         '-Dmapred.reduce.tasks=100'
     parameters       ({:foo => 'bar', :this => 'that'})
+    attributes       ({:input => 'some_input_path', :schema => 'field_1:chararray, field_2:float'})
     script           'some_pig_script.pig'
     output           'out1,out2'
   end

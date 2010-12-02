@@ -7,6 +7,7 @@ module Swineherd
       @script       = ''
       @output       = ''
       @parameters   = {}
+      @attributes   = {}
       @pig_opts     = ''
       self.instance_eval(&blk)
       raketask
@@ -29,7 +30,7 @@ module Swineherd
 
     def script script = nil
       return @script unless script
-      @script = script
+      @script = Template.new(script, attributes).substitute!
     end
 
     def output output = nil
@@ -40,6 +41,11 @@ module Swineherd
     def parameters parameters = nil
       return @parameters unless parameters
       @parameters = parameters
+    end
+
+    def attributes attributes = nil
+      return @attributes unless attributes
+      @attributes = attributes
     end
 
     def pig_opts pig_opts = nil
