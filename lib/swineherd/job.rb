@@ -176,7 +176,7 @@ module Swineherd
         raise "No inputs specified"        if input.empty?
         raise "You must specify an output" if output.empty?
         set_wukong_outputs!
-        return Wukong.cmd(script, parameters, input, output)
+        return Wukong.cmd(script, parameters, input, @wukong_outputs.join(','))
       end
     end
 
