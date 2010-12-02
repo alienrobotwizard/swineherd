@@ -9,6 +9,7 @@ module Swineherd
       @parameters   = {}
       @pig_opts     = ''
       self.instance_eval(&blk)
+      raketask
     end
 
     def name name = nil
