@@ -13,8 +13,8 @@ module Swineherd
           Config::CONFIG["RUBY_INSTALL_NAME"]+Config::CONFIG["EXEEXT"])).realpath
     end
 
-    def self.cmd(script, args, inputs, output)
-      "#{ruby_interpreter_path} #{script} #{wukong_args(args)} --run #{inputs} #{output}"
+    def self.cmd(script, args, input, output)
+      "#{ruby_interpreter_path} #{script} #{wukong_args(args)} --run #{input} #{output}"
     end
 
   end
