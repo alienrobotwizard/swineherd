@@ -5,11 +5,7 @@ module Swineherd
     # command line options for pig '-p FOO=bar'
     #
     def self.pig_args options
-      args = []
-      options.each do |opt, val|
-        args << ['-p', "#{opt.to_s.upcase}=#{val}"]
-      end
-      args.flatten.join(' ')
+      options.map{|opt,val| "-p #{opt.to_s.upcase}=#{val}" }.join(' ')
     end
 
     def self.cmd(opts, args, script)

@@ -8,6 +8,7 @@ module Swineherd
       @output       = ''
       @parameters   = {}
       @attributes   = {}
+      @inputs       = ''
       @pig_opts     = ''
       self.instance_eval(&blk)
       raketask
@@ -48,6 +49,11 @@ module Swineherd
       @attributes = attributes
     end
 
+    def inputs inputs = nil
+      return @inputs unless inputs
+      @inputs = inputs
+    end
+
     def pig_opts pig_opts = nil
       return @pig_opts unless pig_opts
       @pig_opts = pig_opts
@@ -61,6 +67,8 @@ module Swineherd
       case type
       when 'pig' then
         return Pig.cmd(pig_opts, parameters, script)
+      when 'wukong' then
+        return Wukong.cmd(script, parameters, inputs, output)
       end
     end
 
