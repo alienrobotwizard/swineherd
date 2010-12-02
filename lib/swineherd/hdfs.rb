@@ -1,9 +1,9 @@
 module Swineherd
 
   #
-  # Hadoop file classes, should use a better library if one exists
+  # Methods for dealing with hadoop distributed file system (hdfs)
   #
-  class Hfile
+  class HDFS
     #
     # Test if this file exists on the hdfs
     #
@@ -41,9 +41,9 @@ module Swineherd
        jar         ${HADOOP_HOME}/contrib/streaming/hadoop-*streaming*.jar  \\
        -D          mapred.job.name=\"Swineherd Stream\"                     \\
        -D          mapred.reduce.tasks=0                                    \\
-       -mapper     \"/bin/cat\"  				            \\
-       -input      \"#{input}\"					            \\
-       -output     \"#{output}\" &")
+       -mapper     \"/bin/cat\"                                             \\
+       -input      \"#{input}\"                                             \\
+       -output     \"#{output}\"")
     end
 
     #
@@ -57,7 +57,7 @@ module Swineherd
       return true if exist_count == 0
       false
     end
-    
+
   end
-  
+
 end

@@ -1,9 +1,12 @@
 require 'rubygems'
 require 'configliere' ; Configliere.use(:commandline, :env_var, :define)
+
+#
+# Autoload workflow, job, hdfs, and pig classes by default
+#
 module Swineherd
-  autoload :Hfile,      'swineherd/hdfs'
-  autoload :PigTask,    'swineherd/pig_task'
-  autoload :PigScript,  'swineherd/pig_script'
-  autoload :WukongTask, 'swineherd/wukong_task'
-  autoload :RScript,    'swineherd/r_script'
+  autoload :WorkFlow,   'swineherd/workflow'
+  autoload :Job,        'swineherd/job'
+  autoload :HDFS,       'swineherd/hdfs'
+  autoload :Pig,        'swineherd/pig'
 end

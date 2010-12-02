@@ -1,69 +1,64 @@
 h1. SwineHerd
 
-Swineherd allows you to flexibly combine Pig jobs, Wukong scripts, and R analysis and plotting into a set of simple (and idempotent) rake tasks.
+Use Swineherd to flexibly combine Pig jobs, Wukong scripts, and R analysis and plotting into workflows. These workflows can then be run using rake.
 
 h2. Core features
 
 * Easily specify a complex data workflow consisting of "Pig":http://hadoop.apache.org/pig, "Wukong":http://github.com/infochimps/wukong, and "R":http://www.r-project.org/ scripts.
 * Write Pig, Wukong, and R scripts using eruby templates.
 
-h3. Rake Example
+h3. Outline
 
-If you've already written a pig script and simply want to run it as an idempotent rake task you can use the PigTask class.
+Swineherd allows you to organize your data processing into workflows with dependencies managed by rake. Each @workflow@ consists of one or more @jobs@. These jobs are used to drive
+pre-existing Pig scripts, Wukong scripts, and R scripts. Aside from simply running the scripts Swineherd provides a clean ruby interface for managing job level options, dependencies,
+idempotency, and even variable substitution with eruby templates.
+
+h3. Details
+
+Plans:
+
+* A workflow has a name and id
+* A workflow has many jobs
+* A workflow can describe jobs by name
+* A workflow can describe full dependency graph as a visualization
+* A workflow is idempotent
+* A job has a name
+* A job has dependencies
+* A job can describe how to run itself
+* A job has a type (pig, wukong, r)
+* A job has a script that is ALWAYS treated as an erb template
+* A job has command line parameters (parameters)
+* A job has (optional) template parameters (attributes)
+* A job is idempotent
+
+h3. Contrived Example
+
+Suppose you've got a pig script called @some_pig_script.pig@ that produces some output to @out1@ and @out2@. To run it from the command
+line you might say:
 
 <pre><code>
+PIG_OPTS='-Dmapred.reduce.tasks=100' pig -p FOO=bar -p THIS=that some_pig_script.pig
+</code></pre>
 
-require 'swineherd' ; include Swineherd
+But, if you want to check whether the outputs exist and specify two other jobs (other_task and yet_another_task) as dependencies, you're in
+a bind. That's where Swineherd comes in:
 
-PigTask.new_pig_task(:foopig, 'foo.pig') do |options|
-  options[:inputs]           = {:in  => 'foo.tsv'}
-  options[:outputs]          = {:out => '/tmp/foo.tsv'}
-  options[:extra_pig_params] = {:n   => '1L'}
+<pre><code>
+flow_id = 1234
+flow = Swineherd::WorkFlow.new(flow_id) do |jobs|
+
+  myjob = Swinehed::Job.new do
+    type             'pig'
+    name             :myjob
+    dependencies     [:other_task, :yet_another_task]
+    pig_opts         '-Dmapred.reduce.tasks=100'
+    parameters       ({:foo => 'bar', :this => 'that'})
+    script           'some_pig_script.pig'
+    output           'out1,out2'
+  end
+  jobs[myjob.name] = myjob
+  
 end
-
 </code></pre>
 
-The above example defines a new rake task called foobar. To run it, simply do:
-
-<pre><code>
-    rake -f /path/to/rakefile foopig
-</code></pre>
-
-and watch it go.
-
-Dependencies are easy too:
-
-<pre><code>
-task :foopig => [:other_task1, :other_task2]
-</code></pre>
-
-h3. ERB example
-
-You can also use the PigScript class which allows you to use eruby templates like this:
-
-<pre><code>
-    require 'swineherd' ; include Swineherd
-
-    PigScript.new('foo.pig.erb', {:key => value}).run
-    
-</code></pre>
-
-Here a pig script is created, the values of the passed in options hash are substituted into the erb template, and the pig script is ran.
-
-h3. Features
-
-* Code interdependent pig jobs, wukong scripts, and R analysis using rake
-* Sane handling of options
-* Check all outputs, don't run at all if they exist
-* Write Pig in pig latin, R in r and so on.
-
-
-h3. Philosophy
-
-Swineherd is built on the notion that if you're going to use Pig you should learn Pig Latin. If you're going to use R you should learn R. All swineherd provides is a convenient ruby way of using these tools.
-
-* A Pig script should play nicely with other data processing tools. ie. R and Wukong
-* A job should not run if the output data is already there, but pass to the next task
-* Passing in options should be done in a uniform way. ie. eruby templates
-* Pig doesn't have an "include" statement
-* A minor change in a data model shouldn't require rewriting of every script in a workflow
+and run with @rake myjob@.
