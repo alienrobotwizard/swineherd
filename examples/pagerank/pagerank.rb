@@ -5,7 +5,7 @@ require 'swineherd' ; include Swineherd
 require 'swineherd/workflow'
 
 Settings.define :flow_id,    :required => true,                   :description => "Unique id for the workflow"
-Settings.define :work_dir,   :default => "/tmp/pagerank_example", :description => "HDFS path to intermediate and final outputs" 
+Settings.define :work_dir,   :default => "/tmp/pagerank_example", :description => "HDFS path to intermediate and final outputs"
 Settings.define :iterations, :type => Integer,  :default => 5,    :description => "Number of iterations of pagerank algorithm to run"
 Settings.resolve!
 
@@ -36,4 +36,27 @@ Workflow.new(Settings.flow_id) do |flow_id|
     script.output << "#{Settings.work_dir}/pagerank_result"
     script.run
   end
-end.run(:cut_off_adjacency_list)
+
+  #
+  # Pull results into local directory with same name
+  #
+  task :pull_down_results => [:cut_off_adjacency_list] do
+    HDFS.cat_to_local("#{Settings.work_dir}/pagerank_result", "#{Settings.work_dir}/pagerank_result.tsv")
+  end
+
+  #
+  # Plot 2nd column as a histogram (requires R and ggplot2)
+  #
+  task :plot_results =>  [:pull_down_results] do
+    script = RScript.new('histogram.R')
+    script.attributes = {
+      :pagerank_data => "#{Settings.work_dir}/pagerank_result.tsv",
+      :plot_file     => "#{Settings.work_dir}/pagerank_plot.png",
+      :raw_rank      => "aes(x=d$V2)"
+
+    }
+    script.output << "#{Settings.work_dir}/pagerank_plot.png"
+    script.run
+  end
+
+end.run(:plot_results)

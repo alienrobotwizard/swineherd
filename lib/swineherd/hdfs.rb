@@ -47,6 +47,16 @@ module Swineherd
     end
 
     #
+    # Concatenates a hadoop dir into a local file
+    #
+    def self.cat_to_local src, dest
+      if !File.exist?(dest)
+        FileUtils.mkdir_p dest
+        system %Q{hadoop fs -cat #{src}/\* > #{dest}} unless File.exist?(dest)
+      end
+    end
+
+    #
     # Needs to return true if no outputs exist, false otherwise,
     # raise error if some do and some dont
     #
