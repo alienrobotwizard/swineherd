@@ -8,7 +8,7 @@ module Swineherd
 
     def cmd
       raise "No wukong input specified" if @input.empty?
-      Wukong.cmd(script, @options, @input.join(), output.join(','))
+      Wukong.cmd(script, @options, @input.join(','), output.join(','))
     end
   end
 end
