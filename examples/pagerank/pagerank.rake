@@ -1,3 +1,4 @@
+require 'rake'
 require 'swineherd' ; include Swineherd
 
 Settings.define  :iterations, :default => '15',  :description => "Number of iterations of pagerank algorithm to run"

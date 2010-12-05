@@ -25,13 +25,15 @@ hadoop fs -put data/seinfeld_network.tsv /tmp/pagerank_example/
 rake -f pagerank.rake cut_off_adjacency_list -- --iterations=5
 </code></pre>
 
+For an alternative way of running using the @workflow@ class try @./pagerank.rb --flow_id=1234 --iterations=5@
+
 h3. Future
 
 The goal is to eventually bundle multiple scripts into workflows (right now done naively with rake, see pagerank example). These workflows
 should have the following properties:
 
-* A workflow has a name and unique id
-* A workflow is idempotent
-* A workflow has many scripts
-* A workflow can describe the commands required to run it
+* A workflow has a unique id
+* A workflow is idempotent (if only because its tasks are idempotent)
+* A workflow has many tasks
+* A workflow describes the commands required to run it
 * A workflow can be described by a directed graph
