@@ -56,7 +56,7 @@ Workflow.new(Settings.flow_id) do |flow_id|
 
     }
     script.output << "#{Settings.work_dir}/pagerank_plot.png"
-    script.run
+    script.run true # run locally
   end
 
 end.run(:plot_results)

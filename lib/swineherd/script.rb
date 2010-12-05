@@ -1,3 +1,4 @@
+require 'swineherd/localfs'
 module Swineherd
   class Script
     attr_accessor :output, :options, :attributes
@@ -16,9 +17,13 @@ module Swineherd
       raise "Override this in subclass!"
     end
 
-    def run
+    def run local=false
       puts cmd
-      system "#{cmd}" if HDFS.check_paths(@output)
+      if local
+        system "#{cmd}" if LocalFS.check_paths(@output)
+      else
+        system "#{cmd}" if HDFS.check_paths(@output)
+      end
     end
 
   end
