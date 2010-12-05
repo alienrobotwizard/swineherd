@@ -14,7 +14,7 @@ def opts_to_configliere options
 end
 
 def run_workflow workflow, options
-  cmd = "rake -f #{workflow} #{options.flow_id}:#{options.job_name} -- #{opts_to_configliere(options)}"
+  cmd = "rake --trace -f #{workflow} #{options.flow_id}:#{options.job_name} -- #{opts_to_configliere(options)}"
   puts cmd
   exec(cmd)
 end

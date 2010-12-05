@@ -1,64 +1,37 @@
 h1. SwineHerd
 
-Use Swineherd to flexibly combine Pig jobs, Wukong scripts, and R analysis and plotting into workflows. These workflows can then be run using rake.
-
-h2. Core features
-
-* Easily specify a complex data workflow consisting of "Pig":http://hadoop.apache.org/pig, "Wukong":http://github.com/infochimps/wukong, and "R":http://www.r-project.org/ scripts.
-* Write Pig, Wukong, and R scripts using eruby templates.
+* Provides a sane and uniform interface for running "Pig":http://hadoop.apache.org/pig, "Wukong":http://github.com/infochimps/wukong, and "R":http://www.r-project.org/ scripts
+* Scripts can run themselves idempotently
+* Scripts are always treated as templates so variable substitution is easy
 
 h3. Outline
 
-Swineherd allows you to organize your data processing into workflows with dependencies managed by rake. Each @workflow@ consists of one or more @jobs@. These jobs are used to drive
-pre-existing Pig scripts, Wukong scripts, and R scripts. Aside from simply running the scripts Swineherd provides a clean ruby interface for managing job level options, dependencies,
-idempotency, and even variable substitution with eruby templates.
+* A script has a source
+* A script has parameters (used as command line args)
+* A script has optional attributes (used for variable substitution)
+* A script has one or more outputs
+* A script can describe the command required to run it
+* A script can run itself idempotently
+* A script can run itself forcefully
 
-h3. Details
+h3. Working Example
 
-Plans:
+See @examples/pagerank/pagerank.rake@ for a fully working example. To run it do:
 
-* A workflow has a name and id
-* A workflow has many jobs
-* A workflow can describe jobs by name
-* A workflow can describe full dependency graph as a visualization
+<pre><code>
+cd examples/pagerank
+hadoop fs -mkdir /tmp/pagerank_example
+hadoop fs -put data/seinfeld_network.tsv /tmp/pagerank_example/
+rake -f pagerank.rake cut_off_adjacency_list -- --iterations=5
+</code></pre>
+
+h3. Future
+
+The goal is to eventually bundle multiple scripts into workflows (right now done naively with rake, see pagerank example). These workflows
+should have the following properties:
+
+* A workflow has a name and unique id
 * A workflow is idempotent
-* A job has a name
-* A job has dependencies
-* A job can describe how to run itself
-* A job has a type (pig, wukong, r)
-* A job has a script that is ALWAYS treated as an erb template
-* A job has command line parameters (parameters)
-* A job has (optional) template parameters (attributes)
-* A job is idempotent
-
-h3. Contrived Example
-
-Suppose you've got a pig script called @some_pig_script.pig@ that produces some output to @out1@ and @out2@. To run it from the command
-line you might say:
-
-<pre><code>
-PIG_OPTS='-Dmapred.reduce.tasks=100' pig -p FOO=bar -p THIS=that some_pig_script.pig
-</code></pre>
-
-But, if you want to check whether the outputs exist and specify two other jobs (other_task and yet_another_task) as dependencies, you're in
-a bind. That's where Swineherd comes in:
-
-<pre><code>
-flow_id = 1234
-flow = Swineherd::WorkFlow.new(flow_id) do |jobs|
-
-  myjob = Swinehed::Job.new do
-    type             'pig'
-    name             :myjob
-    dependencies     [:other_task, :yet_another_task]
-    pig_opts         '-Dmapred.reduce.tasks=100'
-    parameters       ({:foo => 'bar', :this => 'that'})
-    script           'some_pig_script.pig'
-    output           'out1,out2'
-  end
-  jobs[myjob.name] = myjob
-  
-end
-</code></pre>
-
-and run with @rake myjob@.
+* A workflow has many scripts
+* A workflow can describe the commands required to run it
+* A workflow can be described by a directed graph
