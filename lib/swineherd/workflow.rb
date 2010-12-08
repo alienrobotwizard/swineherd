@@ -1,5 +1,3 @@
-require 'rake'
-
 module Swineherd
   class Workflow
     attr_accessor :workdir, :outputs, :output_counts

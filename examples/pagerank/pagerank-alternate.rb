@@ -16,7 +16,7 @@ flow = Workflow.new(Settings.flow_id) do
 
   task :pagerank_initialize do
     initializer.output << next_output(:pagerank_initialize)
-    initializer.options = {:adjlist => "/tmp/pagerank_example/seinfeld_network.tsv", :initgrph => initializer.output}
+    initializer.options = {:adjlist => "/tmp/pagerank_example/seinfeld_network.tsv", :initgrph => latest_output(:pagerank_initialize)}
     initializer.run
   end
   

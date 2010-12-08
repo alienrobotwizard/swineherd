@@ -34,9 +34,9 @@ module Swineherd
     def run local=false
       puts cmd
       if local
-        system "#{cmd}" if LocalFS.check_paths(@output)
+        sh "#{cmd}" if LocalFS.check_paths(@output)
       else
-        system "#{cmd}" if HDFS.check_paths(@output)
+        sh "#{cmd}" if HDFS.check_paths(@output)
       end
     end
 
