@@ -22,10 +22,10 @@ flow = Workflow.new(Settings.flow_id) do
   
   task :pagerank_iterate => [:pagerank_initialize] do
     iterator.options[:damp]           = '0.85f'
-    iterator.options[:curr_iter_file] = initializer.output
+    iterator.options[:curr_iter_file] = latest_output(:pagerank_initialize)
     Settings.iterations.times do
       iterator.output                   << next_output(:pagerank_iterate)
-      iterator.options[:next_iter_file] = iterator.output
+      iterator.options[:next_iter_file] = latest_output(:pagerank_iterate)
       iterator.run
       iterator.refresh!
       iterator.options[:curr_iter_file] = latest_output(:pagerank_iterate)
