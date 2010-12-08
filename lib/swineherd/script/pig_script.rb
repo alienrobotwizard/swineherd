@@ -1,15 +1,18 @@
-module Swineherd
-  class Pig
+module Swineherd::Script
+  class PigScript
+    include Common
+    attr_accessor :pig_options
+
     #
     # Convert a generic hash of options {:foo => 'bar'} into
     # command line options for pig '-p FOO=bar'
     #
-    def self.pig_args options
+    def pig_args options
       options.map{|opt,val| "-p #{opt.to_s.upcase}=#{val}" }.join(' ')
     end
 
-    def self.cmd(opts, args, script)
-      "PIG_OPTS='#{opts}' pig #{self.pig_args(args)} #{script}"
+    def cmd
+      "PIG_OPTS='#{@pig_options}' pig #{pig_args(@options)} #{script}"
     end
 
   end

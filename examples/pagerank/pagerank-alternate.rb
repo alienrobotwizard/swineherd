@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
 require 'swineherd' ; include Swineherd
-require 'swineherd/workflow'
-require 'swineherd/workflow/job'
+require 'swineherd/script/pig_script' ; include Swineherd::Script
+require 'swineherd/script/wukong_script'
 
 Settings.define :flow_id,    :required => true
 Settings.define :iterations, :type => Integer, :default => 10
