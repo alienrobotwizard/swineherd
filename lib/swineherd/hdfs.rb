@@ -34,6 +34,13 @@ module Swineherd
     end
 
     #
+    # Moves hdfs file from source to dest
+    #
+    def self.mv source, dest
+      system %Q{hadoop fs -mv #{source} #{dest}}
+    end
+
+    #
     # Distributed streaming from input to output
     #
     def self.stream input, output

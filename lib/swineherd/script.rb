@@ -13,14 +13,24 @@ module Swineherd
       @script ||= Template.new(@source, @attributes).substitute!
     end
 
+    #
+    # So we can reuse ourselves
+    #
     def refresh!
       @script = nil
+      @output = []
     end
 
+    #
+    # This depends on the type of script
+    #
     def cmd
       raise "Override this in subclass!"
     end
 
+    #
+    # Default is to run with hadoop
+    #
     def run local=false
       puts cmd
       if local
