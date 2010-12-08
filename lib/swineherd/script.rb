@@ -13,6 +13,10 @@ module Swineherd
       @script ||= Template.new(@source, @attributes).substitute!
     end
 
+    def refresh!
+      @script = nil
+    end
+
     def cmd
       raise "Override this in subclass!"
     end

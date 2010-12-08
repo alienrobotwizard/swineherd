@@ -2,17 +2,6 @@ Settings.define :flow_id,    :required => true
 Settings.define :iterations, :type => Integer, :default => 10
 Settings.resolve!
 
-class Workflow
-  def initialize flow_id, &blk
-    self.instance_eval(&blk)
-  end
-
-  def get_new_output
-    # funky stuff
-  end
-  
-end
-
 flow = Workflow.new(flow_id) do
   
   initializer = PigScript.new('pagerank_initialize.pig')
@@ -31,12 +20,13 @@ flow = Workflow.new(flow_id) do
       iterator.output = get_new_output
       iterator.options[:next_iter_file] = iterator.output
       iterator.run
+      iterator.refresh!
       iterator.options[:curr_iter_file] = iterator.output
     end  
   end
   
 end
 
-flow.workdir = "/tmp/foobar"
+flow.workdir = "/tmp/pagerank_example"
 flow.run(:pagerank_iterate)
-flow.clean!
+# flow.clean!

@@ -1,11 +1,20 @@
 module Swineherd
   class Workflow
-
+    attr_accessor :workdir, :outputs
+    
     def initialize flow_id, &blk
       @flow_id = flow_id
+      @outputs = []
       namespace @flow_id do
-        yield flow_id
+        self.instance_eval(&blk)
       end
+    end
+
+    def get_new_output
+      raise "No working directory specified." unless @workdir
+      file_suffix = rand*10000000.to_i
+      @outputs << "#{@workdir}/#{@flow_id}/#{file_suffix}"
+      @outputs.last
     end
 
     def run taskname
