@@ -3,11 +3,6 @@ require 'pathname'
 module Swineherd::Script
   class WukongScript
     include Common
-    attr_accessor :input
-    def initialize *args
-      super(*args)
-      @input = []
-    end
 
     def wukong_args options
       options.map{|param,val| "--#{param}=#{val}" }.join(' ')
@@ -20,8 +15,8 @@ module Swineherd::Script
     end
 
     def cmd
-      raise "No wukong input specified" if @input.empty?
-      "#{ruby_interpreter_path} #{script} #{wukong_args(@options)} --run #{@input.join(',')} #{output.join(',')}"
+      raise "No wukong input specified" if input.empty?
+      "#{ruby_interpreter_path} #{script} #{wukong_args(@options)} --run #{input.join(',')} #{output.join(',')}"
     end
   end
 end

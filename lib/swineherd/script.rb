@@ -2,9 +2,10 @@ require 'swineherd/localfs'
 module Swineherd
   module Script
     module Common
-      attr_accessor :output, :options, :attributes
-      def initialize(source, output = [], options = {}, attributes ={})
+      attr_accessor :input, :output, :options, :attributes
+      def initialize(source, input = [], output = [], options = {}, attributes ={})
         @source     = source
+        @input      = input
         @output     = output
         @options    = options
         @attributes = attributes
