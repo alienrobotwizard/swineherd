@@ -1,5 +1,5 @@
 module Swineherd::Script
-
+  
   #
   # native Java map-reduce
   #
@@ -13,13 +13,34 @@ module Swineherd::Script
     end
 
     #
-    # Generic hash {:foo => 'bar'} to '-Dfoo=bar' but more commonly
-    # is a nested hash eg.
-    # {:cassandra => {:config => 'cassandra.yaml'}} will transform to
-    # '-Dcassandra.config=cassandra.yaml'
+    # Converts an arbitrarily nested hash to flattened arguments
+    # for passing to java program. For example:
     #
-    def java_args options
+    # {:mapred => {:reduce => {:tasks => 0}}}
+    #
+    # will transform to:
+    #
+    # '-Dmapred.reduce.tasks=0'
+    #
+    def java_args args
+      to_dotted_args(args).map{|arg| "-D#{arg}"}
+    end
 
+    #
+    # Uses recursion to take an arbitrarily nested hash and
+    # flatten it into dotted args. See 'to_java_args'. Can
+    # you do it any better?
+    #
+    def to_dotted_args args
+      args.map do |k,v|
+        if v.is_a?(Hash)
+          to_dotted_args(v).map do |s|
+            [k,s].join(".")
+          end
+        else
+          "#{k}=#{v}"
+        end
+      end.flatten
     end
     
     def cmd
