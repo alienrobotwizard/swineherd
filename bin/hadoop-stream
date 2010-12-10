@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'rake'
+require 'swineherd' ; include Swineherd
+
+#
+# Uses hadoop and rake's multitask capability to stream many source
+# files in parallel into a single destination directory.
+#
+
+Settings.define :input, :type => Array, :required => true, :description => "Comma spearated list of directories (hdfs paths, s3 paths, etc) to stream"
+Settings.define :output,                :required => true, :description => "Destination directory (s3 or hdfs)"
+Settings.resolve!
+
+#
+# Takes a hash of paths eg: {'filename' => 'full path'} and defines
+# a new streaming task for each one
+#
+def define_tasks list_of_tasks
+  list_of_tasks.each do |basename, source|
+    task basename do
+      destination = File.join(Settings.output, basename) # each file gets its own output
+      HDFS.stream(source, destination)
+    end
+  end
+end
+
+# Create a list of tasks, one per file
+list_of_tasks = Settings.input.inject({}){|list, path| list[File.basename(path)] = path; list}
+define_tasks list_of_tasks
+
+multitask :stream_all => list_of_tasks.keys
+
+Rake::MultiTask["stream_all"].invoke
