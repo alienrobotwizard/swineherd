@@ -4,8 +4,8 @@ require 'swineherd' ; include Swineherd
 require 'swineherd/script/pig_script' ; include Swineherd::Script
 require 'swineherd/script/wukong_script'
 
-Settings.define :flow_id,    :required => true
-Settings.define :iterations, :type => Integer, :default => 10
+Settings.define :flow_id,    :required => true,                 :description => "Flow id required to make run of workflow unique"
+Settings.define :iterations, :type => Integer,  :default => 10, :description => "Number of pagerank iterations to run"
 Settings.resolve!
 
 flow = Workflow.new(Settings.flow_id) do
@@ -42,5 +42,5 @@ end
 
 flow.workdir = "/tmp/pagerank_example"
 flow.describe
-flow.run(:cut_off_adjacency_list)
+# flow.run(:cut_off_adjacency_list)
 # flow.clean!
