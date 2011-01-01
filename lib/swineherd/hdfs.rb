@@ -45,11 +45,12 @@ module Swineherd
     #
     def self.stream input, output
      system("${HADOOP_HOME}/bin/hadoop \\
-       jar         ${HADOOP_HOME}/contrib/streaming/hadoop-*streaming*.jar  \\
-       -D          mapred.job.name=\"Swineherd Stream\"                     \\
-       -D          mapred.reduce.tasks=0                                    \\
-       -mapper     \"/bin/cat\"                                             \\
-       -input      \"#{input}\"                                             \\
+       jar         ${HADOOP_HOME}/contrib/streaming/hadoop-*streaming*.jar                     \\
+       -D          mapred.job.name=\"Swineherd Stream (#{File.basename(input)} -> #{output})\" \\
+       -D          mapred.min.split.size=1000000000                                            \\
+       -D          mapred.reduce.tasks=0                                                       \\
+       -mapper     \"/bin/cat\"                                                                \\
+       -input      \"#{input}\"                                                                \\
        -output     \"#{output}\"")
     end
 
