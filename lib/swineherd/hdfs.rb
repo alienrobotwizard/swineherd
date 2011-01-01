@@ -55,6 +55,33 @@ module Swineherd
     end
 
     #
+    # Given an array of input dirs, stream all into output dir and remove duplicate records.
+    # Reasonable default hadoop streaming options are chosen.
+    #
+    def self.merge inputs, output, options = {
+      :reduce_tasks     => 25,
+      :partition_fields => 2,
+      :sort_fields      => 2,
+      :field_separator  => '\t'
+    }
+      names = inputs.map{|inp| File.basename(inp)}.join(',')
+      system("${HADOOP_HOME}/bin/hadoop \\
+       jar         ${HADOOP_HOME}/contrib/streaming/hadoop-*streaming*.jar                   \\
+       -D          mapred.job.name=\"Swineherd Merge (#{names} -> #{output})\"               \\
+       -D          num.key.fields.for.partition=\"#{options[:partition_fields]}\"            \\
+       -D 	   stream.num.map.output.key.fields=\"#{options[:sort_fields]}\"             \\
+       -D          mapred.text.key.partitioner.options=\"-k1,#{options[:partition_fields]}\" \\
+       -D          stream.map.output.field.separator=\"'#{options[:field_separator]}'\"      \\
+       -D          mapred.min.split.size=1000000000                                          \\
+       -D          mapred.reduce.tasks=#{options[:reduce_tasks]}                             \\
+       -partitioner org.apache.hadoop.mapred.lib.KeyFieldBasedPartitioner 		     \\
+       -mapper     \"/bin/cat\"                                                              \\
+       -reducer    \"/usr/bin/uniq\"                                                         \\
+       -input      \"#{inputs.join(',')}\"                                                   \\
+       -output     \"#{output}\"")
+    end
+
+    #
     # Concatenates a hadoop dir into a local file
     #
     def self.cat_to_local src, dest
