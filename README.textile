@@ -1,8 +1,8 @@
 h1. SwineHerd
 
-* Provides a sane and uniform interface for running "Pig":http://pig.apache.org, "Wukong":http://github.com/infochimps/wukong, and "R":http://www.r-project.org/ scripts
+* Provides a simple workflow engine with a sane and uniform interface for running "Pig":http://pig.apache.org, "Wukong":http://github.com/infochimps/wukong, and "R":http://www.r-project.org/ scripts
 * Scripts can run themselves idempotently
-* Scripts are always treated as templates so variable substitution is easy
+* Scripts are always treated as eruby templates so variable substitution is easy
 
 h3. Outline
 
@@ -13,6 +13,14 @@ h3. Outline
 * A script can describe the command required to run it
 * A script can run itself idempotently
 * A script can run itself forcefully
+
+* A workflow has an id
+* A workflow manages intermediate outputs
+* A workflow has a working directory in which all intermediate outputs go
+** These are named according to the rake task that created them
+* A workflow can be run idempotently (by virtue of it being constructed from @script@ objects)
+* A workflow can describe its dependency graph
+* A workflow should be able to clean up its intermediate outputs
 
 h3. Working Example
 
