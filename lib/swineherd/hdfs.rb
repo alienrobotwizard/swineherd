@@ -68,12 +68,12 @@ module Swineherd
        jar         ${HADOOP_HOME}/contrib/streaming/hadoop-*streaming*.jar                   \\
        -D          mapred.job.name=\"Swineherd Merge (#{names} -> #{output})\"               \\
        -D          num.key.fields.for.partition=\"#{options[:partition_fields]}\"            \\
-       -D 	   stream.num.map.output.key.fields=\"#{options[:sort_fields]}\"             \\
+       -D          stream.num.map.output.key.fields=\"#{options[:sort_fields]}\"             \\
        -D          mapred.text.key.partitioner.options=\"-k1,#{options[:partition_fields]}\" \\
        -D          stream.map.output.field.separator=\"'#{options[:field_separator]}'\"      \\
        -D          mapred.min.split.size=1000000000                                          \\
        -D          mapred.reduce.tasks=#{options[:reduce_tasks]}                             \\
-       -partitioner org.apache.hadoop.mapred.lib.KeyFieldBasedPartitioner 		     \\
+       -partitioner org.apache.hadoop.mapred.lib.KeyFieldBasedPartitioner                    \\
        -mapper     \"/bin/cat\"                                                              \\
        -reducer    \"/usr/bin/uniq\"                                                         \\
        -input      \"#{inputs.join(',')}\"                                                   \\
@@ -83,13 +83,10 @@ module Swineherd
     end
 
     #
-    # Concatenates a hadoop dir into a local file
+    # Concatenates a hadoop dir or file into a local file
     #
     def self.cat_to_local src, dest
-      if !File.exist?(dest)
-        FileUtils.mkdir_p dest
-        system %Q{hadoop fs -cat #{src}/\* > #{dest}} unless File.exist?(dest)
-      end
+      system %Q{hadoop fs -cat #{src}/[^_]* > #{dest}} unless File.exist?(dest)
     end
 
     #
