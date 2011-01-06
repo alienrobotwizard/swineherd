@@ -58,14 +58,13 @@ module Swineherd
     # Given an array of input dirs, stream all into output dir and remove duplicate records.
     # Reasonable default hadoop streaming options are chosen.
     #
-    def self.merge inputs, output, options = {
-      :reduce_tasks     => 25,
-      :partition_fields => 2,
-      :sort_fields      => 2,
-      :field_separator  => '\t'
-    }
+    def self.merge inputs, output, options = {}
+      options[:reduce_tasks]     ||= 25
+      options[:partition_fields] ||= 2
+      options[:sort_fields]      ||= 2
+      options[:field_separator]  ||= '/t'
       names = inputs.map{|inp| File.basename(inp)}.join(',')
-      system("${HADOOP_HOME}/bin/hadoop \\
+      cmd   = "${HADOOP_HOME}/bin/hadoop \\
        jar         ${HADOOP_HOME}/contrib/streaming/hadoop-*streaming*.jar                   \\
        -D          mapred.job.name=\"Swineherd Merge (#{names} -> #{output})\"               \\
        -D          num.key.fields.for.partition=\"#{options[:partition_fields]}\"            \\
@@ -78,7 +77,9 @@ module Swineherd
        -mapper     \"/bin/cat\"                                                              \\
        -reducer    \"/usr/bin/uniq\"                                                         \\
        -input      \"#{inputs.join(',')}\"                                                   \\
-       -output     \"#{output}\"")
+       -output     \"#{output}\""
+      puts cmd
+      system cmd
     end
 
     #
