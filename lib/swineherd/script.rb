@@ -21,6 +21,7 @@ module Swineherd
       def refresh!
         @script = nil
         @output = []
+        @input  = []
       end
 
       #
