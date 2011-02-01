@@ -1,7 +1,7 @@
 module Swineherd::Script
   class PigScript
     include Common
-    attr_accessor :pig_options
+    attr_accessor :pig_options, :pig_classpath
 
     #
     # Convert a generic hash of options {:foo => 'bar'} into
@@ -12,7 +12,7 @@ module Swineherd::Script
     end
 
     def cmd
-      "PIG_OPTS='#{@pig_options}' pig #{pig_args(@options)} #{script}"
+      "PIG_CLASSPATH=#{@pig_classpath} PIG_OPTS='#{@pig_options}' pig #{pig_args(@options)} #{script}"
     end
 
   end
