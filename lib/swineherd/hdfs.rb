@@ -27,6 +27,15 @@ module Swineherd
     end
 
     #
+    # Get an array of paths in the targeted hdfs path
+    #
+    def self.dir_entries target
+      stuff = `hadoop fs -ls #{target}`
+      stuff = stuff.split(/\n/).map{|l| l.split(/\s+/).last}
+      stuff[1..-1] rescue []
+    end
+
+    #
     # Removes hdfs file
     #
     def self.rm target
