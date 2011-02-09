@@ -20,6 +20,13 @@ module Swineherd
     end
 
     #
+    # Make a new hdfs dir if and only if it does not already exist
+    #
+    def self.mkdir_p target
+      mkdir target unless exist? target
+    end
+
+    #
     # Removes hdfs file
     #
     def self.rmr target
