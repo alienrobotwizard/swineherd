@@ -1,0 +1,47 @@
+h1.  File System Abstraction
+
+Hackboxen need to access files and directories in order to do their
+stuff.  We currently expect them to use at least the following types
+of filesystems:
+
+* Local File System
+* Ephemeral Hadoop cluster HDFS
+* s3/HDFS
+
+Each of these filesystem types has different methods to accomplish the same operations. In order to make this diversity more easily used by hackboxen, an abstraction layer has been created.  
+
+h2. Interface
+
+A new @FileSystem@ class has a single class method @get@ taking two argugments:
+
+* @scheme@: A token which specifies the filesystem scheme. Currently, only @:file@ is supported.
+* @*args@: Optional arguments (e.g. credentitals)
+
+The returned (abstracted) filesystem instnace has the following methods:
+
+* @open(path,mode,blk)@: Return a @File@ like file handle object.  @mode@ and @blk@ arguments are optional and work like the standard ruby @File.open@ arguments.
+* @rm(path)@: Works like UNIX @rm -r@.
+* @exists?(path)@: Returns @true@ if the file/directory exists
+* @mv(srcpath,dstpath)@: Renames/moves the file/directory.
+* @cp(srcpath,dstpath)@: Works like UNIX @cp -r@.
+* @mkpath(dirpath)@: Creates a directory and all required parent directories.
+* @type(path)@: Returns one of "dir", "file", or "symlink".
+* @entries(dirpath)@: Returns the the files/subdirectories in this directory
+
+The @File@ object returned by the @open@ methods has the following methods:
+
+* @read@: Return the contents of the entire file as a string.
+* @readline@: Return the next line in the file, or nil if there no more lines.
+* @write(string)@: Write @string@ to the file.
+* @close@:  Close the file
+
+h2. Creating an abstraction
+
+Each abstraction is not expected to catch and rethrow exceptions of the abstracted subsystems. Rather, exceptions should pass through.  However, each method should try to be built to behave similarly to the corresponding native ruby @File@ and @FileUtils@ methods.
+
+h2. Current State
+
+The only currently implemented filesystem abstraction is @:file@ (local file system).
+
+
+
