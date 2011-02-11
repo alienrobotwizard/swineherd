@@ -64,6 +64,17 @@ module Swineherd
     end
 
     #
+    # For running tasks idempotently. Returns true if no paths exist, false if all paths exist,
+    # and raises an error otherwise.
+    #
+    def check_paths paths
+      exist_count = paths.inject(0){|cnt, path| cnt += 1 if exists?(path); cnt}
+      raise "Indeterminate output state" if (exist_count > 0) && (exist_count < paths.size)
+      return true if exist_count == 0
+      false
+    end
+
+    #
     # Needs to close the filesystem by cleaning up any open connections, &c.
     #
     def close *args

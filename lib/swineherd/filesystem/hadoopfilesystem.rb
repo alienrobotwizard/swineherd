@@ -28,6 +28,11 @@ module Swineherd
       set_env
     end
 
+    def open path, mode="r", &blk
+      HadoopFile.new(path,mode,self,&blk)
+    end
+
+
     def rm path
       @hdfs.delete(Path.new(path), true)
     end
@@ -48,13 +53,19 @@ module Swineherd
       @hdfs.mkdirs(Path.new(path))
     end
 
-    #
-    # Symlinks are not supported at the moment
-    #
     def type path
+      return "unknown" unless exists? path
       status = @hdfs.get_file_status(Path.new(path))
-      return "file" unless status.is_dir
-      "directory"
+      return "directory" if status.is_dir?
+      "file"
+      # case
+      # when status.isFile then
+      #   return "file"
+      # when status.is_directory? then
+      #   return "directory"
+      # when status.is_symlink? then
+      #   return "symlink"
+      # end
     end
 
     def entries dirpath
@@ -65,61 +76,50 @@ module Swineherd
     def close *args
       @hdfs.close
     end
+    
+    class HadoopFile
+      attr_accessor :path, :handle, :hdfs
 
-    # include Swineherd::BaseFileSystem::ClassMethods
+      #
+      # In order to open input and output streams we must pass around the hadoop fs object itself
+      #
+      def initialize path, mode, fs, &blk
+        @fs   = fs
+        @path = Path.new(path)
+        case mode
+        when "r" then
+          raise "No such file or directory - #{path}" unless @fs.exist? path
+          @handle = @fs.hdfs.open(@path).to_io.to_inputstream(&blk)
+        when "w" then
+          # Open path for writing
+          raise "Path #{path} is a directory." unless (@fs.type(path) == "file") || (@fs.type(path) == "unknown")
+          @handle = @fs.hdfs.create(@path).to_io.to_outputstream
+          yield self if block_given?
+        end
+      end
 
-    # #
-    # # Test if this file exists on the hdfs
-    # #
-    # def self.exist? target
-    #   system %Q{hadoop fs -test -e #{target}}
-    # end
-    #
-    # #
-    # # Make a new hdfs dir, returns non-zero if already
-    # # exists
-    # #
-    # def self.mkdir target
-    #   system %Q{hadoop fs -mkdir #{target}}
-    # end
-    #
-    # #
-    # # Make a new hdfs dir if and only if it does not already exist
-    # #
-    # def self.mkdir_p target
-    #   mkdir target unless exist? target
-    # end
-    #
-    # #
-    # # Removes hdfs file
-    # #
-    # def self.rmr target
-    #   system %Q{hadoop fs -rmr #{target}}
-    # end
-    #
-    # #
-    # # Get an array of paths in the targeted hdfs path
-    # #
-    # def self.dir_entries target
-    #   stuff = `hadoop fs -ls #{target}`
-    #   stuff = stuff.split(/\n/).map{|l| l.split(/\s+/).last}
-    #   stuff[1..-1] rescue []
-    # end
-    #
-    # #
-    # # Removes hdfs file
-    # #
-    # def self.rm target
-    #   system %Q{hadoop fs -rm #{target}}
-    # end
-    #
-    # #
-    # # Moves hdfs file from source to dest
-    # #
-    # def self.mv source, dest
-    #   system %Q{hadoop fs -mv #{source} #{dest}}
-    # end
-    #
+      def read
+        @handle.read
+      end
+
+      def readline
+        @handle.readline
+      end
+
+      def write string
+        @handle.write(string.to_java_string.get_bytes)
+      end
+
+      def puts string
+        write(string+"\n")
+      end
+
+      def close
+        @handle.close
+      end
+
+    end
+
     # #
     # # Distributed streaming from input to output
     # #
@@ -169,19 +169,7 @@ module Swineherd
     #   system %Q{hadoop fs -cat #{src}/[^_]* > #{dest}} unless File.exist?(dest)
     # end
     #
-    # #
-    # # Needs to return true if no outputs exist, false otherwise,
-    # # raise error if some do and some dont
-    # #
-    # def self.check_paths paths
-    #   exist_count   = 0 # no outputs exist
-    #   paths.each{|hdfs_path| exist_count += 1 if exist?(hdfs_path) }
-    #   raise "Indeterminate output state" if (exist_count > 0) && (exist_count < paths.size)
-    #   return true if exist_count == 0
-    #   false
-    # end
-
-
+   
     #
     # Check that we are running with jruby, check for hadoop home. hadoop_home
     # is preferentially set to the HADOOP_HOME environment variable if it's set,
@@ -215,6 +203,8 @@ module Swineherd
       java_import 'org.apache.hadoop.fs.FileUtil'
       java_import 'org.apache.hadoop.mapreduce.lib.input.FileInputFormat'
       java_import 'org.apache.hadoop.mapreduce.lib.output.FileOutputFormat'
+      java_import 'org.apache.hadoop.fs.FSDataOutputStream'
+      java_import 'org.apache.hadoop.fs.FSDataInputStream'
 
     end
 
