@@ -1,16 +1,16 @@
 module Swineherd
-  autoload :BaseFileSystem,   'filesystem/basefilesystem'
-  autoload :LocalFileSystem,  'filesystem/localfilesystem'
-  autoload :HadoopFileSystem, 'filesystem/hadoopfilesystem'
+  autoload :BaseFileSystem,   'swineherd/filesystem/basefilesystem'
+  autoload :LocalFileSystem,  'swineherd/filesystem/localfilesystem'
+  autoload :HadoopFileSystem, 'swineherd/filesystem/hadoopfilesystem'
 
   class FileSystem
     # A factory function that returns an instance of the requested class
-    def self.get(scheme, *args)
-      case sheme
+    def self.get scheme
+      case scheme
       when :file then
-        LocalFileSystem.new
+        Swineherd::LocalFileSystem.new
       when :hdfs then
-        HadoopFileSystem.new
+        Swineherd::HadoopFileSystem.new
       else
         raise "Filesystem with scheme #{scheme} does not exist."
       end
