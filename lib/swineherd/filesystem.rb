@@ -5,12 +5,12 @@ module Swineherd
 
   class FileSystem
     # A factory function that returns an instance of the requested class
-    def self.get scheme
+    def self.get scheme, *args
       case scheme
       when :file then
-        Swineherd::LocalFileSystem.new
+        Swineherd::LocalFileSystem.new *args
       when :hdfs then
-        Swineherd::HadoopFileSystem.new
+        Swineherd::HadoopFileSystem.new *args
       else
         raise "Filesystem with scheme #{scheme} does not exist."
       end
