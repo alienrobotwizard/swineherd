@@ -35,6 +35,7 @@ module Swineherd
 
     def rm path
       @hdfs.delete(Path.new(path), true)
+      [path]
     end
 
     def exists? path
@@ -51,6 +52,7 @@ module Swineherd
 
     def mkpath path
       @hdfs.mkdirs(Path.new(path))
+      path
     end
 
     def type path
@@ -69,6 +71,7 @@ module Swineherd
     end
 
     def entries dirpath
+      return unless type(dirpath) == "directory"
       list = @hdfs.list_status(Path.new(dirpath))
       list.map{|path| path.get_path.to_s}
     end
@@ -88,8 +91,8 @@ module Swineherd
         @path = Path.new(path)
         case mode
         when "r" then
-          raise "No such file or directory - #{path}" unless @fs.exist? path
-          @handle = @fs.hdfs.open(@path).to_io.to_inputstream(&blk)
+          raise "#{@fs.type(path)} is not a readable file - #{path}" unless @fs.type(path) == "file"
+          @handle = @fs.hdfs.open(@path).to_io(&blk)
         when "w" then
           # Open path for writing
           raise "Path #{path} is a directory." unless (@fs.type(path) == "file") || (@fs.type(path) == "unknown")
