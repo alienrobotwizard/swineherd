@@ -1,48 +1,152 @@
 h1. SwineHerd
 
-* Provides a simple workflow engine with a sane and uniform interface for running "Pig":http://pig.apache.org, "Wukong":http://github.com/infochimps/wukong, and "R":http://www.r-project.org/ scripts
-* Scripts can run themselves idempotently
-* Scripts are always treated as eruby templates so variable substitution is easy
+Swineherd is for running scripts and workflows on filesystems.
 
 h3. Outline
 
-* A script has a source
-* A script has parameters (used as command line args)
-* A script has optional attributes (used for variable substitution)
-* A script has one or more outputs
-* A script can describe the command required to run it
-* A script can run itself idempotently
-* A script can run itself forcefully
+A @workflow@ is built with @script@ objects and ran on a @filesystem@.
 
-* A workflow has an id
-* A workflow manages intermediate outputs
+h4. Script:
+
+A script has the following
+
+* @source@ - The source file used. These can be "Apache Pig":http://pig.apache.org/ scripts, "Wukong":http://github.com/infochimps/wukong scripts, even "R":http://www.r-project.org/ scripts. You can add your own scripts by subclassing the @script@ class. 
+* @input@ - An array of input paths.
+* @output@ - An array of output paths.
+* @options@ - A ruby hash of options used as command line args. Eg. {:foo => 'bar'}. How these options are mapped to command line arguments is up to the particular script class.
+* @attributes@ - A ruby hash of parameters used for variable substitution. Every script is assumed to be (but not required to be) an eruby template.
+
+h4. Workflow:
+
+A workflow is built using rake @task@ objects that doing nothing more than run scripts. A workflow
+
+* can be described with a directed dependency graph
+* has an @id@ which is used to run its tasks idempotently. At the moment it is the responsibility of the running process (or human being) to choose a suitable id.
+* manages intermediate outputs by using the @next_output@ and @latest_output@ methods. See the examples dir for usage.
 * A workflow has a working directory in which all intermediate outputs go
 ** These are named according to the rake task that created them
-* A workflow can be run idempotently (by virtue of it being constructed from @script@ objects)
-* A workflow can describe its dependency graph
-* A workflow should be able to clean up its intermediate outputs
+
+h4. FileSystem
+
+Workflows are intended to run on filesystems. At the moment, implemented filesystems are
+
+* @file@ - local filesystem
+* @hdfs@ - hadoop distributed filesystem
+
+Using the filesystem:
+
+<pre><code>
+# get a new instance of local filesystem and write to it
+localfs = FileSystem.get(:file)
+localfs.open("mylocalfile") do |f|
+  f.write("Writing a string to a local file")
+end
+
+# get a new instance of hadoop filesystem and write to it
+hadoopfs = FileSystem.get(:hdfs)
+hadoopfs.open("myhadoopfile") do |f|
+  f.write("Writing a string to an hdfs file")
+end
+</code></pre>
 
 h3. Working Example
 
-See @examples/pagerank/pagerank.rake@ for a fully working example. To run it do:
+For the most up to date working example see the examples directory. Here's a simple example for running pagerank:
 
 <pre><code>
-cd examples/pagerank
-hadoop fs -mkdir /tmp/pagerank_example
-hadoop fs -put data/seinfeld_network.tsv /tmp/pagerank_example/
-rake -f pagerank.rake cut_off_adjacency_list -- --iterations=5
+#!/usr/bin/env ruby
+
+$LOAD_PATH << '../../lib'
+require 'swineherd' ; include Swineherd
+require 'swineherd/filesystem'
+require 'swineherd/script/pig_script' ; include Swineherd::Script
+require 'swineherd/script/wukong_script'
+require 'swineherd/script/r_script'
+
+Settings.define :flow_id,    :required => true,                      :description => "Flow id required to make run of workflow unique"
+Settings.define :iterations, :type => Integer,  :default => 10,      :description => "Number of pagerank iterations to run"
+Settings.define :hadoop_home, :default => '/usr/local/share/hadoop', :description => "Path to hadoop config"
+Settings.resolve!
+
+flow = Workflow.new(Settings.flow_id) do
+
+  initializer = PigScript.new('scripts/pagerank_initialize.pig')
+  iterator    = PigScript.new('scripts/pagerank.pig')
+  finisher    = WukongScript.new('scripts/cut_off_list.rb')
+  plotter     = RScript.new('scripts/histogram.R')
+
+  #
+  # Runs simple pig script to initialize pagerank. We must specify the input
+  # here as this is the first step in the workflow. The output attribute is to
+  # ensure idempotency and the options attribute is the hash that will be
+  # converted into command-line args for the pig interpreter.
+  #
+  task :pagerank_initialize do
+    initializer.pig_classpath = File.join(Settings.hadoop_home, 'conf')
+    initializer.output << next_output(:pagerank_initialize)
+    initializer.options = {:adjlist => "/tmp/pagerank_example/seinfeld_network.tsv", :initgrph => latest_output(:pagerank_initialize)}
+    initializer.run
+  end
+
+  #
+  # Runs multiple iterations of pagerank with another pig script and manages all
+  # the intermediate outputs.
+  #
+  task :pagerank_iterate => [:pagerank_initialize] do
+    iterator.options[:damp]           = '0.85f'
+    iterator.options[:curr_iter_file] = latest_output(:pagerank_initialize)
+    Settings.iterations.times do
+      iterator.output                   << next_output(:pagerank_iterate)
+      iterator.options[:next_iter_file] = latest_output(:pagerank_iterate)
+      iterator.run
+      iterator.refresh!
+      iterator.options[:curr_iter_file] = latest_output(:pagerank_iterate)
+    end
+  end
+
+  #
+  # Here we use a wukong script to cut off the last field (a big pig bag of
+  # links). Notice how every wukong script MUST have an input but pig scripts do
+  # not.
+  #
+  task :cut_off_adjacency_list => [:pagerank_iterate] do
+    finisher.input  << latest_output(:pagerank_iterate)
+    finisher.output << next_output(:cut_off_adjacency_list)
+    finisher.run
+  end
+
+  #
+  # Cat results into a local directory with the same structure eg. #{work_dir}/#{flow_id}/pull_down_results-0.
+  #
+  task :pull_down_results => [:cut_off_adjacency_list] do
+    hdfs    = FileSystem.get(:hdfs)
+    localfs = FileSystem.get(:file)
+    next if localfs.exists? next_output(:pull_down_results)
+    hdfs.copy_to_local(latest_output(:cut_off_adjacency_list), latest_output(:pull_down_results))
+  end
+
+  #
+  # Plot 2nd column of the result as a histogram (requires R and
+  # ggplot2). Note that the output here is a png file but doesn't have that
+  # extension. Ensmarten me as to the right way to handle that?
+  #
+  task :plot_results =>  [:pull_down_results] do
+    plotter.attributes = {
+      :pagerank_data => latest_output(:pull_down_results),
+      :plot_file     => next_output(:plot_results), # <-- this will be a png...
+      :raw_rank      => "aes(x=d$V2)"
+    }
+    plotter.output << latest_output(:plot_result)
+    script.run :local 
+  end
+
+end
+
+flow.workdir = "/tmp/pagerank_example"
+flow.describe
+flow.run(:plot_results)
 </code></pre>
 
-For an alternative way of running using the @workflow@ class try @./pagerank.rb --flow_id=1234 --iterations=5@
+h3. TODO
 
-h3. Future
-
-The goal is to eventually bundle multiple scripts into workflows (right now done naively with rake, see pagerank example). These workflows
-should have the following properties:
-
-* A workflow has a unique id
-* A workflow is idempotent (if only because its tasks are idempotent)
-* A workflow has many tasks
-* A workflow manages intermediate outputs
-* A workflow describes the commands required to run it
-* A workflow can be described by a directed graph
+* implement s3 and ftp filesystem interfaces
