@@ -76,6 +76,20 @@ module Swineherd
       list.map{|path| path.get_path.to_s}
     end
 
+    #
+    # Merge all part files in a directory into one file.
+    #
+    def merge srcdir, dstfile
+      FileUtil.copy_merge(@hdfs, Path.new(srcdir), @hdfs, Path.new(dstfile), false, @conf, "")
+    end
+
+    #
+    # Copy hdfs file to local filesystem
+    #
+    def copy_to_local srcfile, dstfile
+      @hdfs.copy_to_local_file(Path.new(srcfile), Path.new(dstfile))
+    end
+
     def close *args
       @hdfs.close
     end

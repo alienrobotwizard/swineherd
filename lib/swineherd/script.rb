@@ -1,4 +1,4 @@
-require 'swineherd/localfs'
+require 'swineherd/filesystem'
 module Swineherd
   module Script
     module Common
@@ -33,12 +33,14 @@ module Swineherd
       #
       # Default is to run with hadoop
       #
-      def run local=false
-        puts cmd
-        if local
-          sh "#{cmd}" if LocalFS.check_paths(@output)
-        else
-          sh "#{cmd}" if HDFS.check_paths(@output)
+      def run mode=:hadoop
+        case mode
+        when :local then
+          localfs = FileSystem.get :file
+          sh "#{cmd}" if localfs.check_paths(@output)
+        when :hadoop then
+          hdfs = FileSystem.get :hdfs
+          sh "#{cmd}" if hdfs.check_paths(@output)
         end
       end
 

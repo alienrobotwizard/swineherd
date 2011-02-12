@@ -1,19 +1,23 @@
 #!/usr/bin/env ruby
 
+$LOAD_PATH << '../../lib'
 require 'swineherd' ; include Swineherd
+require 'swineherd/filesystem'
 require 'swineherd/script/pig_script' ; include Swineherd::Script
 require 'swineherd/script/wukong_script'
+require 'swineherd/script/r_script'
 
-Settings.define :flow_id,    :required => true,                 :description => "Flow id required to make run of workflow unique"
-Settings.define :iterations, :type => Integer,  :default => 10, :description => "Number of pagerank iterations to run"
+Settings.define :flow_id,    :required => true,                      :description => "Flow id required to make run of workflow unique"
+Settings.define :iterations, :type => Integer,  :default => 10,      :description => "Number of pagerank iterations to run"
+Settings.define :hadoop_home, :default => '/usr/local/share/hadoop', :description => "Path to hadoop config"
 Settings.resolve!
 
 flow = Workflow.new(Settings.flow_id) do
 
-  initializer = PigScript.new('pagerank_initialize.pig')
-  iterator    = PigScript.new('pagerank.pig')
-  finisher    = WukongScript.new('cut_off_list.rb')
-  plotter     = RScript.new('histogram.R')
+  initializer = PigScript.new('scripts/pagerank_initialize.pig')
+  iterator    = PigScript.new('scripts/pagerank.pig')
+  finisher    = WukongScript.new('scripts/cut_off_list.rb')
+  plotter     = RScript.new('scripts/histogram.R')
 
   #
   # Runs simple pig script to initialize pagerank. We must specify the input
@@ -22,6 +26,7 @@ flow = Workflow.new(Settings.flow_id) do
   # converted into command-line args for the pig interpreter.
   #
   task :pagerank_initialize do
+    initializer.pig_classpath = File.join(Settings.hadoop_home, 'conf')
     initializer.output << next_output(:pagerank_initialize)
     initializer.options = {:adjlist => "/tmp/pagerank_example/seinfeld_network.tsv", :initgrph => latest_output(:pagerank_initialize)}
     initializer.run
@@ -55,10 +60,13 @@ flow = Workflow.new(Settings.flow_id) do
   end
 
   #
-  # Cat results into a local directory with the same structure eg. #{work_dir}/#{flow_id}/pull_down_results-0
+  # Cat results into a local directory with the same structure eg. #{work_dir}/#{flow_id}/pull_down_results-0.
   #
   task :pull_down_results => [:cut_off_adjacency_list] do
-    HDFS.cat_to_local(latest_output(:pagerank_iterate), next_output(:pull_down_results))
+    hdfs    = FileSystem.get(:hdfs)
+    localfs = FileSystem.get(:file)
+    next if localfs.exists? next_output(:pull_down_results)
+    hdfs.copy_to_local(latest_output(:cut_off_adjacency_list), latest_output(:pull_down_results))
   end
 
   #
@@ -73,7 +81,7 @@ flow = Workflow.new(Settings.flow_id) do
       :raw_rank      => "aes(x=d$V2)"
     }
     plotter.output << latest_output(:plot_result)
-    script.run true # <-- run locallly
+    script.run :local 
   end
 
 end
