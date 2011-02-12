@@ -5,12 +5,13 @@ require 'swineherd/filesystem' ; include Swineherd
 require 'rubygems'
 require 'rspec'
 
+current_test = :hdfs
 describe "A new filesystem" do
 
   before do
     @test_path  = "/tmp/rspec/test_path"
     @test_path2 = "/tmp/rspec/test_path2"
-    @fs = Swineherd::FileSystem.get(:hdfs)        
+    @fs = Swineherd::FileSystem.get(current_test)        
   end
 
   it "should implement exists?" do
@@ -56,7 +57,7 @@ describe "A new filesystem" do
       @fs.mkpath(File.join(@test_path, sub_path))
     end
     @fs.entries(@test_path).class.should eql(Array)
-    @fs.entries(@test_path).map{|path| File.basename(path)}.sort.should eql(sub_paths.sort)
+    @fs.entries(@test_path).map{|path| File.basename(path)}.reject{|x| x =~ /\./}.sort.should eql(sub_paths.sort)
     @fs.rm(@test_path)
   end
 
@@ -73,7 +74,7 @@ describe "A new file" do
     @test_path   = "/tmp/rspec/test_path"
     @test_path2  = "/tmp/rspec/test_path2"
     @test_string = "@('_')@"
-    @fs = Swineherd::FileSystem.get(:hdfs)
+    @fs = Swineherd::FileSystem.get(current_test)
   end
 
   it "should be closeable" do

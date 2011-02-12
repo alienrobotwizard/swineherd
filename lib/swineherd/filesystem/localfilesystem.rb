@@ -45,7 +45,7 @@ module Swineherd
     end
     
     def entries dirpath
-      return unless type dirpath == "directory"
+      return unless (type(dirpath) == "directory")
       Dir.entries(dirpath)
     end
     
