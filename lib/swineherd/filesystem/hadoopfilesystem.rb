@@ -93,7 +93,7 @@ module Swineherd
     def close *args
       @hdfs.close
     end
-    
+
     class HadoopFile
       attr_accessor :path, :handle, :hdfs
 
@@ -111,7 +111,10 @@ module Swineherd
           # Open path for writing
           raise "Path #{path} is a directory." unless (@fs.type(path) == "file") || (@fs.type(path) == "unknown")
           @handle = @fs.hdfs.create(@path).to_io.to_outputstream
-          yield self if block_given?
+          if block_given?
+            yield self
+            self.close # muy muy importante
+          end
         end
       end
 
@@ -186,7 +189,7 @@ module Swineherd
     #   system %Q{hadoop fs -cat #{src}/[^_]* > #{dest}} unless File.exist?(dest)
     # end
     #
-   
+
     #
     # Check that we are running with jruby, check for hadoop home. hadoop_home
     # is preferentially set to the HADOOP_HOME environment variable if it's set,
