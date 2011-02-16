@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'net/http'
+require 'configliere'; Settings.use(:commandline)
+require 'nokogiri'
+
+Settings.define :jobtracker,      :default => 'localhost', :description => "Jobtracker url"
+Settings.define :jobtracker_port, :default => '50030',     :description => "Jobtracker port"
+Settings.define :job_id,          :required => true,       :description => "Job id of the job to fetch stats for (eg. job_201012031305_0455)"
+Settings.resolve!
+
+class StatsFetcher
+  attr_accessor :host, :port
+  def initialize host, port
+    @host   = host
+    @port   = port
+  end
+
+  def listing
+    @listing || fetch_listing
+  end
+
+  def fetch_listing
+    request = Net::HTTP::Get.new("/logs/history/")
+    result  = Net::HTTP.start(host, port) do |http|
+      http.request(request)
+    end
+    @listing = parse_raw_listing(result.body)
+    @listing
+  end
+
+  def fetch_jobconf job_id
+    path = listing.select{|path| path =~ /#{job_id}.*.xml\z/}.first
+    request = Net::HTTP::Get.new(path)
+    result  = Net::HTTP.start(host, port) do |http|
+      http.request(request)
+    end
+    # @jobconf = parse_raw_jobconf(result.body)
+    @jobconf = result.body
+    @jobconf
+  end
+
+  def fetch_stats_page job_id
+    path = listing.select{|path| path =~ /#{job_id}/}.reject{|path| path =~ /.*.xml|.*.crc/}.first
+    request = Net::HTTP::Get.new(path)
+    result  = Net::HTTP.start(host, port) do |http|
+      http.request(request)
+    end
+    # @stats_page = parse_raw_stats_page(result.body)
+    @stats_page = result.body
+    @stats_page
+  end
+  
+  def parse_raw_listing raw_listing    
+    Nokogiri::HTML.parse(raw_listing).xpath('//tr//td//a').map{|link| link.attributes["href"].value}
+  end
+
+end
+
+fetcher = StatsFetcher.new(Settings.jobtracker, Settings.jobtracker_port)
+puts fetcher.fetch_stats_page Settings.job_id
+puts fetcher.fetch_jobconf Settings.job_id
