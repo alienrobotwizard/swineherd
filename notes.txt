@@ -1,0 +1,20 @@
+Logging:
+
+1. All output from the launched workflow should go to a workflow log file
+2. Hadoop output is special and should be pulled down from the jobtracker
+   - jobconf.xml
+   - job details page
+
+Workflow should specify a logdir, defualts to workdir + '/logs'
+
+Fetching hadoop job stats:
+
+1. Get job id
+2. Use curl to fetch the latest logs listing: "http://jobtracker:50030/logs/history/"
+3. Parse the logs listing and pull out the two urls we want (something-jobid.xml, something-jobid....)
+4. Fetch the two urls we care about and dump into the workflow's log dir.
+5. Possibly parse the results into an ongoing workflow-statistics.tsv file
+
+Other output:
+
+Output that would otherwise go to the terminal (nohup.out or some such) should be collected and dumped into the logdir as well.
