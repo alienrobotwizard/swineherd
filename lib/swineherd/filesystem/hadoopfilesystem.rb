@@ -214,7 +214,8 @@ module Swineherd
     def set_env
       require 'java'
       @hadoop_conf = (ENV['HADOOP_CONF_DIR'] || File.join(@hadoop_home, 'conf'))
-      $CLASSPATH << @hadoop_conf
+      @hadoop_conf += "/" unless @hadoop_conf.end_with? "/"
+      $CLASSPATH << @hadoop_conf 
       Dir["#{@hadoop_home}/hadoop*.jar", "#{@hadoop_home}/lib/*.jar"].each{|jar| require jar}
 
       java_import 'org.apache.hadoop.conf.Configuration'
