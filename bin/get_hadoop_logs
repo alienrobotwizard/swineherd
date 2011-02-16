@@ -1,63 +1,36 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env jruby
 
-require 'rubygems'
-require 'net/http'
-require 'configliere'; Settings.use(:commandline)
-require 'nokogiri'
+require 'swineherd'; include Swineherd
 
-Settings.define :jobtracker,      :default => 'localhost', :description => "Jobtracker url"
-Settings.define :jobtracker_port, :default => '50030',     :description => "Jobtracker port"
-Settings.define :job_id,          :required => true,       :description => "Job id of the job to fetch stats for (eg. job_201012031305_0455)"
-Settings.resolve!
+class LogGatherer
 
-class StatsFetcher
-  attr_accessor :host, :port
-  def initialize host, port
-    @host   = host
-    @port   = port
+  attr_accessor :fs
+  def initialize
+    @fs = FileSystem.get(:hdfs)
   end
 
-  def listing
-    @listing || fetch_listing
+  #
+  # Given a path to a hadoop job's output return the string jobconf contents
+  #
+  def jobconf path
+    log_path    = File.join(path, "_logs", "history")
+    jobconf_xml = fs.entries(log_path).select{|path| path =~ /.*.xml/}.first
+    fs.open(jobconf_xml).read
   end
 
-  def fetch_listing
-    request = Net::HTTP::Get.new("/logs/history/")
-    result  = Net::HTTP.start(host, port) do |http|
-      http.request(request)
-    end
-    @listing = parse_raw_listing(result.body)
-    @listing
-  end
 
-  def fetch_jobconf job_id
-    path = listing.select{|path| path =~ /#{job_id}.*.xml\z/}.first
-    request = Net::HTTP::Get.new(path)
-    result  = Net::HTTP.start(host, port) do |http|
-      http.request(request)
-    end
-    # @jobconf = parse_raw_jobconf(result.body)
-    @jobconf = result.body
-    @jobconf
-  end
-
-  def fetch_stats_page job_id
-    path = listing.select{|path| path =~ /#{job_id}/}.reject{|path| path =~ /.*.xml|.*.crc/}.first
-    request = Net::HTTP::Get.new(path)
-    result  = Net::HTTP.start(host, port) do |http|
-      http.request(request)
-    end
-    # @stats_page = parse_raw_stats_page(result.body)
-    @stats_page = result.body
-    @stats_page
+  #
+  # Given a path to a hadoop job's output return the string jobstats contents
+  #
+  def jobstats path
+    log_path      = File.join(path, "_logs", "history")
+    jobstats_page = fs.entries(log_path).reject{|path| path =~ /.*.xml/}.first
+    fs.open(jobstats_page).read
   end
   
-  def parse_raw_listing raw_listing    
-    Nokogiri::HTML.parse(raw_listing).xpath('//tr//td//a').map{|link| link.attributes["href"].value}
-  end
-
+  
 end
 
-fetcher = StatsFetcher.new(Settings.jobtracker, Settings.jobtracker_port)
-puts fetcher.fetch_stats_page Settings.job_id
-puts fetcher.fetch_jobconf Settings.job_id
+gatherer = LogGatherer.new
+puts gatherer.jobconf "/tmp/trstrank/trstrank_table"
+puts gatherer.jobstats "/tmp/trstrank/trstrank_table"
