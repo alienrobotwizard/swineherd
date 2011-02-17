@@ -149,4 +149,11 @@ flow.run(:plot_results)
 
 h3. TODO
 
+* strip out idempotentcy from the scripts themselves, it's confusing. delegate to the higher level task at the moment
+** the user can use the filesystem interface to achieve this
+** some pig scripts have no filesystem output, still need to be ran idempotently, shouldn't be creating a output path to achieve this
+* add a @job@ object that implements a @not_if@ function. this way a @workflow@ will be constructed of @job@ objects
+** a @job@ will do nothing more than execute the ruby code in it's (run?) block, unless @not_if@ is true
+** this way we can put @script@ objects inside a @job@ and only run under certain conditions that the user specifies when
+   they create the @job@
 * implement s3 and ftp filesystem interfaces
