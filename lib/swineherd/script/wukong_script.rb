@@ -18,5 +18,12 @@ module Swineherd::Script
       raise "No wukong input specified" if input.empty?
       "#{ruby_interpreter_path} #{script} #{wukong_args(@options)} --run #{input.join(',')} #{output.join(',')}"
     end
+
+    # FIXME: wukong's local mode doesn't work?
+    def local_cmd
+      inputs = input.map{|path| path += "/*"}.join(',')
+      "#{ruby_interpreter_path} #{script} #{wukong_args(@options)} --run=local #{inputs} #{output.join(',')}"
+    end
+
   end
 end

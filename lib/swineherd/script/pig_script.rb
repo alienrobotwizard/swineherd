@@ -11,6 +11,10 @@ module Swineherd::Script
       options.map{|opt,val| "-p #{opt.to_s.upcase}=#{val}" }.join(' ')
     end
 
+    def local_cmd
+      "PIG_CLASSPATH=#{@pig_classpath} PIG_OPTS='#{@pig_options}' pig -x local #{pig_args(@options)} #{script}"
+    end
+
     def cmd
       "PIG_CLASSPATH=#{@pig_classpath} PIG_OPTS='#{@pig_options}' pig #{pig_args(@options)} #{script}"
     end

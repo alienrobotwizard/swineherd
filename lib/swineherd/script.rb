@@ -30,6 +30,16 @@ module Swineherd
       def cmd
         raise "Override this in subclass!"
       end
+
+      #
+      # Override this in subclass to decide how script runs in 'local' mode
+      # Best practice is that it needs to be able to run on a laptop w/o
+      # hadoop.
+      #
+      def local_cmd
+        raise "Override this in subclass!"
+      end
+
       #
       # Default is to run with hadoop
       #
@@ -37,10 +47,10 @@ module Swineherd
         case mode
         when :local then
           localfs = FileSystem.get :file
-          sh "#{cmd}" if localfs.check_paths(@output)
+          sh local_cmd if localfs.check_paths(@output)
         when :hadoop then
           hdfs = FileSystem.get :hdfs
-          sh "#{cmd}" if hdfs.check_paths(@output)
+          sh cmd if hdfs.check_paths(@output)
         end
       end
 
