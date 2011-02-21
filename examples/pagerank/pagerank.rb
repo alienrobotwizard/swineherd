@@ -1,19 +1,22 @@
 #!/usr/bin/env ruby
 
 $LOAD_PATH << '../../lib'
-require 'swineherd' ; include Swineherd
+require 'swineherd'        ; include Swineherd
+require 'swineherd/script' ; include Swineherd::Script
 require 'swineherd/filesystem'
-require 'swineherd/script/pig_script' ; include Swineherd::Script
-require 'swineherd/script/wukong_script'
-require 'swineherd/script/r_script'
 
-Settings.define :flow_id,    :required => true,                      :description => "Flow id required to make run of workflow unique"
-Settings.define :iterations, :type => Integer,  :default => 10,      :description => "Number of pagerank iterations to run"
+Settings.define :flow_id,     :required => true,                     :description => "Flow id required to make run of workflow unique"
+Settings.define :iterations,  :type => Integer,  :default => 10,     :description => "Number of pagerank iterations to run"
 Settings.define :hadoop_home, :default => '/usr/local/share/hadoop', :description => "Path to hadoop config"
 Settings.resolve!
 
 flow = Workflow.new(Settings.flow_id) do
 
+  # The filesystems we're going to be working with
+  hdfs    = Swineherd::FileSystem.get(:hdfs)
+  localfs = Swineherd::FileSystem.get(:file)
+
+  # The scripts we're going to use
   initializer = PigScript.new('scripts/pagerank_initialize.pig')
   iterator    = PigScript.new('scripts/pagerank.pig')
   finisher    = WukongScript.new('scripts/cut_off_list.rb')
@@ -26,10 +29,8 @@ flow = Workflow.new(Settings.flow_id) do
   # converted into command-line args for the pig interpreter.
   #
   task :pagerank_initialize do
-    initializer.pig_classpath = File.join(Settings.hadoop_home, 'conf')
-    initializer.output << next_output(:pagerank_initialize)
-    initializer.options = {:adjlist => "/tmp/pagerank_example/seinfeld_network.tsv", :initgrph => latest_output(:pagerank_initialize)}
-    initializer.run
+    initializer.options = {:adjlist => "/tmp/pagerank_example/seinfeld_network.tsv", :initgrph => next_output(:pagerank_initialize)}
+    initializer.run(:hadoop) unless hdfs.exists? latest_output(:pagerank_initialize)
   end
 
   #
@@ -40,9 +41,8 @@ flow = Workflow.new(Settings.flow_id) do
     iterator.options[:damp]           = '0.85f'
     iterator.options[:curr_iter_file] = latest_output(:pagerank_initialize)
     Settings.iterations.times do
-      iterator.output                   << next_output(:pagerank_iterate)
-      iterator.options[:next_iter_file] = latest_output(:pagerank_iterate)
-      iterator.run
+      iterator.options[:next_iter_file] = next_output(:pagerank_iterate)
+      iterator.run(:hadoop) unless hdfs.exists? latest_output(:pagerank_iterate)
       iterator.refresh!
       iterator.options[:curr_iter_file] = latest_output(:pagerank_iterate)
     end
@@ -56,17 +56,26 @@ flow = Workflow.new(Settings.flow_id) do
   task :cut_off_adjacency_list => [:pagerank_iterate] do
     finisher.input  << latest_output(:pagerank_iterate)
     finisher.output << next_output(:cut_off_adjacency_list)
-    finisher.run
+    finisher.run :hadoop unless hdfs.exists? latest_output(:cut_off_adjacency_list)
   end
 
   #
-  # Cat results into a local directory with the same structure eg. #{work_dir}/#{flow_id}/pull_down_results-0.
+  # We want to pull down one result file, merge the part-000.. files into one file
   #
-  task :pull_down_results => [:cut_off_adjacency_list] do
-    hdfs    = FileSystem.get(:hdfs)
-    localfs = FileSystem.get(:file)
-    next if localfs.exists? next_output(:pull_down_results)
-    hdfs.copy_to_local(latest_output(:cut_off_adjacency_list), latest_output(:pull_down_results))
+  task :merge_results => [:cut_off_adjacency_list] do
+    merged_results = next_output(:merge_results)
+    hdfs.merge(latest_output(:cut_off_adjacency_list), merged_results) unless hdfs.exists? merged_results
+  end
+
+  #
+  # Cat results into a local directory with the same structure
+  # eg. #{work_dir}/#{flow_id}/pull_down_results-0.
+  #
+  # FIXME: Bridging filesystems is cludgey.
+  #
+  task :pull_down_results => [:merge_results] do
+    local_results = next_output(:pull_down_results)
+    hdfs.copy_to_local(latest_output(:merge_results), local_results) unless localfs.exists? local_results
   end
 
   #
@@ -80,8 +89,7 @@ flow = Workflow.new(Settings.flow_id) do
       :plot_file     => next_output(:plot_results), # <-- this will be a png...
       :raw_rank      => "aes(x=d$V2)"
     }
-    plotter.output << latest_output(:plot_result)
-    script.run :local 
+    plotter.run(:hadoop) unless localfs.exists? latest_output(:plot_results)
   end
 
 end
@@ -89,4 +97,3 @@ end
 flow.workdir = "/tmp/pagerank_example"
 flow.describe
 flow.run(:plot_results)
-# flow.clean!

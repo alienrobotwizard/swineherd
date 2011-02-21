@@ -1,6 +1,10 @@
-require 'swineherd/filesystem'
 module Swineherd
   module Script
+
+    autoload :WukongScript, 'swineherd/script/wukong_script'
+    autoload :PigScript,    'swineherd/script/pig_script'
+    autoload :RScript,      'swineherd/script/r_script'
+
     module Common
       attr_accessor :input, :output, :options, :attributes
       def initialize(source, input = [], output = [], options = {}, attributes ={})
@@ -9,6 +13,13 @@ module Swineherd
         @output     = output
         @options    = options
         @attributes = attributes
+      end
+
+      #
+      # Allows for setting the environment the script will be ran in
+      #
+      def env
+        ENV
       end
 
       def script
@@ -46,11 +57,9 @@ module Swineherd
       def run mode=:hadoop
         case mode
         when :local then
-          localfs = FileSystem.get :file
-          sh local_cmd if localfs.check_paths(@output)
+          sh local_cmd
         when :hadoop then
-          hdfs = FileSystem.get :hdfs
-          sh cmd if hdfs.check_paths(@output)
+          sh cmd
         end
       end
 
