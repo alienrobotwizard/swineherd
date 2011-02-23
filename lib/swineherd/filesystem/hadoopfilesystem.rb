@@ -73,7 +73,7 @@ module Swineherd
     def entries dirpath
       return unless type(dirpath) == "directory"
       list = @hdfs.list_status(Path.new(dirpath))
-      list.map{|path| path.get_path.to_s}
+      list.map{|path| path.get_path.to_s} rescue []
     end
 
     #
@@ -81,6 +81,23 @@ module Swineherd
     #
     def merge srcdir, dstfile
       FileUtil.copy_merge(@hdfs, Path.new(srcdir), @hdfs, Path.new(dstfile), false, @conf, "")
+    end
+
+    #
+    # This is hackety. Use with caution.
+    #
+    def stream input, output
+      require 'uri'
+      input_fs_scheme  = URI.parse(input).scheme
+      output_fs_scheme = URI.parse(output).scheme
+      system("#{@hadoop_home}/bin/hadoop \\
+       jar         #{@hadoop_home}/contrib/streaming/hadoop-*streaming*.jar                     \\
+       -D          mapred.job.name=\"Stream { #{input_fs_scheme}(#{File.basename(input)}) -> #{output_fs_scheme}(#{File.basename(output)}) }\" \\
+       -D          mapred.min.split.size=1000000000                                            \\
+       -D          mapred.reduce.tasks=0                                                       \\
+       -mapper     \"/bin/cat\"                                                                \\
+       -input      \"#{input}\"                                                                \\
+       -output     \"#{output}\"")
     end
 
     #
@@ -143,16 +160,6 @@ module Swineherd
     # #
     # # Distributed streaming from input to output
     # #
-    # def self.stream input, output
-    #  system("${HADOOP_HOME}/bin/hadoop \\
-    #    jar         ${HADOOP_HOME}/contrib/streaming/hadoop-*streaming*.jar                     \\
-    #    -D          mapred.job.name=\"Swineherd Stream (#{File.basename(input)} -> #{output})\" \\
-    #    -D          mapred.min.split.size=1000000000                                            \\
-    #    -D          mapred.reduce.tasks=0                                                       \\
-    #    -mapper     \"/bin/cat\"                                                                \\
-    #    -input      \"#{input}\"                                                                \\
-    #    -output     \"#{output}\"")
-    # end
     #
     # #
     # # Given an array of input dirs, stream all into output dir and remove duplicate records.
