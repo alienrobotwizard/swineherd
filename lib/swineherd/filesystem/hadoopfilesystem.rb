@@ -111,7 +111,7 @@ module Swineherd
     # Copyy local file to hdfs filesystem
     #
     def copy_from_local srcfile, dstfile
-      @hdfs.copy_from_local_file(srcfile, dstfile)
+      @hdfs.copy_from_local_file(Path.new(srcfile), Path.new(dstfile))
     end
 
     def close *args
