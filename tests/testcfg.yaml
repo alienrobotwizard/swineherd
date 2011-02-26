@@ -1,0 +1,7 @@
+---
+filesystem_to_test: file
+s3_test_bucket: infochimps-test
+
+# :) you'll probably want to change these
+aws_access_key_id: myaccessid
+aws_secret_access_key: 1234mysecretaccesskey8q7fh

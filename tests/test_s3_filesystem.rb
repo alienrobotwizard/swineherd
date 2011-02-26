@@ -1,19 +1,46 @@
 #!/usr/bin/env ruby
 
+#
+# These tests cannot possibly pass unless you have an amazon account with proper
+# credentials. Furthermore, you definitely want a test bucket to play with. In
+# this set of mock tests I've called it 'test-bucket' which will certainly get
+# you and 'access-denied' error. Also, despite all that, 4 tests (see below)
+# will fail outright.
+#
+# This one has to break the rules slightly because amazon-s3 is not actually a
+# filesystem implementation. There's no such thing as a 'path' and so the following
+# tests will fail:
+#
+# 1. it "should be able to create a path" (path wont exist but it's ok, thats what
+# we expect)
+#
+# 2. it "should be able to copy paths" (it can't create paths that aren't files
+# and so we expect this to fail, again it's ok.)
+#
+# 3. it "should be able to move paths" (it can't create paths that aren't files
+# and so we expect this to fail, again it's ok.)
+#
+# 4. it "can return an array of directory entries" (ditto)
+#
+# Note: If one were to rewrite the above tests to use existing paths on s3 then the
+# tests will succeed. Try it.
+#
+
+
 $LOAD_PATH << 'lib'
 require 'swineherd/filesystem' ; include Swineherd
 require 'rubygems'
 require 'yaml'
 require 'rspec'
 
-options      = YAML.load(File.read(File.dirname(__FILE__)+'/testcfg.yaml'))
-current_test = options['filesystem_to_test']
+options = YAML.load(File.read(File.dirname(__FILE__)+'/testcfg.yaml'))
+current_test = 's3'
 describe "A new filesystem" do
 
   before do
-    @test_path  = "/tmp/rspec/test_path"
-    @test_path2 = "/tmp/rspec/test_path2"
-    @fs = Swineherd::FileSystem.get(current_test)
+    @test_path  = "#{options['s3_test_bucket']}/tmp/rspec/test_path"
+    @test_path2 = "#{options['s3_test_bucket']}/tmp/rspec/test_path2"
+    @fs = Swineherd::FileSystem.get(current_test, options['aws_access_key_id'], options['aws_secret_access_key'])
   end
 
   it "should implement exists?" do
@@ -73,10 +100,10 @@ end
 
 describe "A new file" do
   before do
-    @test_path   = "/tmp/rspec/test_path"
-    @test_path2  = "/tmp/rspec/test_path2"
+    @test_path   = "#{options['s3_test_bucket']}/tmp/rspec/test_path"
+    @test_path2  = "#{options['s3_test_bucket']}/test_path2"
     @test_string = "@('_')@"
-    @fs = Swineherd::FileSystem.get(current_test)
+    @fs = Swineherd::FileSystem.get(current_test, options['aws_access_key_id'], options['aws_secret_access_key'])
   end
 
   it "should be closeable" do
