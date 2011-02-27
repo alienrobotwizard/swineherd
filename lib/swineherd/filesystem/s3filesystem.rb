@@ -11,7 +11,7 @@ module Swineherd
     attr_accessor :s3
 
     #
-    # Initialize a new hadoop file system, needs path to hadoop configuration
+    # Initialize a new s3 file system, needs path to aws keys
     #
     def initialize aws_access_key_id, aws_secret_access_key
       require 'right_aws'
@@ -26,15 +26,13 @@ module Swineherd
       bkt = bucket(path)
       key = key_path(path)
       if key.empty? # only the bucket was passed in, delete it
-        # @s3.interface.force_delete_bucket(bkt)
-        puts "deleting everything in your bucket"
+        @s3.interface.force_delete_bucket(bkt)
       else
         case type(path)
         when "directory" then
           keys_to_delete = lr(path)
           keys_to_delete.each do |k|
             key_to_delete = key_path(k)
-            puts "deleting (#{bkt}, #{key_to_delete})"
             @s3.interface.delete(bkt, key_to_delete)
           end
           keys_to_delete
@@ -187,7 +185,7 @@ module Swineherd
       attr_accessor :path, :handle, :fs
 
       #
-      # In order to open input and output streams we must pass around the hadoop fs object itself
+      # In order to open input and output streams we must pass around the s3 fs object itself
       #
       def initialize path, mode, fs, &blk
         @fs   = fs
