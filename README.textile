@@ -30,22 +30,32 @@ h4. FileSystem
 
 Workflows are intended to run on filesystems. At the moment, implemented filesystems are
 
-* @file@ - local filesystem
-* @hdfs@ - hadoop distributed filesystem
+* @file@ - Local file system. Only thoroughly tested on unbuntu linux.
+* @hdfs@ - Hadoop distributed file system. Uses jruby and the Apache Hadoop 0.20 api.
+* @s3@ - Uses the right_aws gem for interacting with Amazon Simple Storage System (s3).
 
 Using the filesystem:
+
+Paths should be absolute.
 
 <pre><code>
 # get a new instance of local filesystem and write to it
 localfs = FileSystem.get(:file)
-localfs.open("mylocalfile") do |f|
+localfs.open("mylocalfile", 'w') do |f|
   f.write("Writing a string to a local file")
 end
 
 # get a new instance of hadoop filesystem and write to it
 hadoopfs = FileSystem.get(:hdfs)
-hadoopfs.open("myhadoopfile") do |f|
+hadoopfs.open("myhadoopfile", 'w') do |f|
   f.write("Writing a string to an hdfs file")
+end
+
+# get a new instance of s3 filesystem and write to it
+s3fs = FileSystem.get(:s3)
+s3fs.mkpath 'mys3bucket' # bucket must exist
+s3fs.open("mys3bucket/mys3file", 'w') do |f|
+  f.write("Writing a string to an s3 file")
 end
 </code></pre>
 
@@ -57,19 +67,22 @@ For the most up to date working example see the examples directory. Here's a sim
 #!/usr/bin/env ruby
 
 $LOAD_PATH << '../../lib'
-require 'swineherd' ; include Swineherd
+require 'swineherd'        ; include Swineherd
+require 'swineherd/script' ; include Swineherd::Script
 require 'swineherd/filesystem'
-require 'swineherd/script/pig_script' ; include Swineherd::Script
-require 'swineherd/script/wukong_script'
-require 'swineherd/script/r_script'
 
-Settings.define :flow_id,    :required => true,                      :description => "Flow id required to make run of workflow unique"
-Settings.define :iterations, :type => Integer,  :default => 10,      :description => "Number of pagerank iterations to run"
+Settings.define :flow_id,     :required => true,                     :description => "Flow id required to make run of workflow unique"
+Settings.define :iterations,  :type => Integer,  :default => 10,     :description => "Number of pagerank iterations to run"
 Settings.define :hadoop_home, :default => '/usr/local/share/hadoop', :description => "Path to hadoop config"
 Settings.resolve!
 
 flow = Workflow.new(Settings.flow_id) do
 
+  # The filesystems we're going to be working with
+  hdfs    = Swineherd::FileSystem.get(:hdfs)
+  localfs = Swineherd::FileSystem.get(:file)
+
+  # The scripts we're going to use
   initializer = PigScript.new('scripts/pagerank_initialize.pig')
   iterator    = PigScript.new('scripts/pagerank.pig')
   finisher    = WukongScript.new('scripts/cut_off_list.rb')
@@ -82,10 +95,8 @@ flow = Workflow.new(Settings.flow_id) do
   # converted into command-line args for the pig interpreter.
   #
   task :pagerank_initialize do
-    initializer.pig_classpath = File.join(Settings.hadoop_home, 'conf')
-    initializer.output << next_output(:pagerank_initialize)
-    initializer.options = {:adjlist => "/tmp/pagerank_example/seinfeld_network.tsv", :initgrph => latest_output(:pagerank_initialize)}
-    initializer.run
+    initializer.options = {:adjlist => "/tmp/pagerank_example/seinfeld_network.tsv", :initgrph => next_output(:pagerank_initialize)}
+    initializer.run(:hadoop) unless hdfs.exists? latest_output(:pagerank_initialize)
   end
 
   #
@@ -96,9 +107,8 @@ flow = Workflow.new(Settings.flow_id) do
     iterator.options[:damp]           = '0.85f'
     iterator.options[:curr_iter_file] = latest_output(:pagerank_initialize)
     Settings.iterations.times do
-      iterator.output                   << next_output(:pagerank_iterate)
-      iterator.options[:next_iter_file] = latest_output(:pagerank_iterate)
-      iterator.run
+      iterator.options[:next_iter_file] = next_output(:pagerank_iterate)
+      iterator.run(:hadoop) unless hdfs.exists? latest_output(:pagerank_iterate)
       iterator.refresh!
       iterator.options[:curr_iter_file] = latest_output(:pagerank_iterate)
     end
@@ -112,17 +122,26 @@ flow = Workflow.new(Settings.flow_id) do
   task :cut_off_adjacency_list => [:pagerank_iterate] do
     finisher.input  << latest_output(:pagerank_iterate)
     finisher.output << next_output(:cut_off_adjacency_list)
-    finisher.run
+    finisher.run :hadoop unless hdfs.exists? latest_output(:cut_off_adjacency_list)
   end
 
   #
-  # Cat results into a local directory with the same structure eg. #{work_dir}/#{flow_id}/pull_down_results-0.
+  # We want to pull down one result file, merge the part-000.. files into one file
   #
-  task :pull_down_results => [:cut_off_adjacency_list] do
-    hdfs    = FileSystem.get(:hdfs)
-    localfs = FileSystem.get(:file)
-    next if localfs.exists? next_output(:pull_down_results)
-    hdfs.copy_to_local(latest_output(:cut_off_adjacency_list), latest_output(:pull_down_results))
+  task :merge_results => [:cut_off_adjacency_list] do
+    merged_results = next_output(:merge_results)
+    hdfs.merge(latest_output(:cut_off_adjacency_list), merged_results) unless hdfs.exists? merged_results
+  end
+
+  #
+  # Cat results into a local directory with the same structure
+  # eg. #{work_dir}/#{flow_id}/pull_down_results-0.
+  #
+  # FIXME: Bridging filesystems is cludgey.
+  #
+  task :pull_down_results => [:merge_results] do
+    local_results = next_output(:pull_down_results)
+    hdfs.copy_to_local(latest_output(:merge_results), local_results) unless localfs.exists? local_results
   end
 
   #
@@ -136,8 +155,7 @@ flow = Workflow.new(Settings.flow_id) do
       :plot_file     => next_output(:plot_results), # <-- this will be a png...
       :raw_rank      => "aes(x=d$V2)"
     }
-    plotter.output << latest_output(:plot_result)
-    script.run :local 
+    plotter.run(:local) unless localfs.exists? latest_output(:plot_results)
   end
 
 end
@@ -156,4 +174,4 @@ h3. TODO
 ** a @job@ will do nothing more than execute the ruby code in it's (run?) block, unless @not_if@ is true
 ** this way we can put @script@ objects inside a @job@ and only run under certain conditions that the user specifies when
    they create the @job@
-* implement s3 and ftp filesystem interfaces
+* implement ftp filesystem interfaces
