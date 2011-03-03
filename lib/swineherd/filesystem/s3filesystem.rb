@@ -193,7 +193,6 @@ module Swineherd
         case mode
         when "r" then
           raise "#{fs.type(path)} is not a readable file - #{path}" unless fs.type(path) == "file"
-          @handle = fs.s3.interface.get_object(fs.bucket(path), fs.key_path(path)).each
         when "w" then
           raise "Path #{path} is a directory." unless (fs.type(path) == "file") || (fs.type(path) == "unknown")
           @handle = Tempfile.new('s3filestream')
@@ -208,10 +207,16 @@ module Swineherd
       # Faster than iterating
       #
       def read
-        fs.s3.interface.get_object(fs.bucket(path), fs.key_path(path))
+        resp = fs.s3.interface.get_object(fs.bucket(path), fs.key_path(path))
+        resp
       end
 
+      #
+      # This is a little hackety. That is, once you call (.each) on the object the full object starts
+      # downloading...
+      #
       def readline
+        @handle ||= fs.s3.interface.get_object(fs.bucket(path), fs.key_path(path)).each        
         begin
           @handle.next
         rescue StopIteration, NoMethodError
