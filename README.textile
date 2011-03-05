@@ -52,7 +52,9 @@ hadoopfs.open("myhadoopfile", 'w') do |f|
 end
 
 # get a new instance of s3 filesystem and write to it
-s3fs = FileSystem.get(:s3)
+access_key_id     = '1234abcd'
+secret_access_key = 'foobar1234'
+s3fs = FileSystem.get(:s3, accees_key_id, secret_access_key)
 s3fs.mkpath 'mys3bucket' # bucket must exist
 s3fs.open("mys3bucket/mys3file", 'w') do |f|
   f.write("Writing a string to an s3 file")
