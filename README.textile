@@ -167,6 +167,34 @@ flow.describe
 flow.run(:plot_results)
 </code></pre>
 
+h3. Utils
+
+There's a fun little program to emphasize the ease of using the filesystem abstraction called 'hdp-tree':
+
+<pre><code>
+$: bin/hdp-tree /tmp/my_hdfs_directory
+--- 
+/tmp/my_hdfs_directory: 
+  - my_hdfs_directory: 
+      - sub_dir_a: leaf_file_1
+      - sub_dir_a: leaf_file_2
+      - sub_dir_a: leaf_file_3
+  - my_hdfs_directory: 
+      - sub_dir_b: leaf_file_1
+      - sub_dir_b: leaf_file_2
+      - sub_dir_b: leaf_file_3
+  - my_hdfs_directory: 
+      - sub_dir_c: leaf_file_1
+      - sub_dir_c: leaf_file_2
+      - sub_dir_c: leaf_file_3
+      - sub_dir_c: 
+          - sub_sub_dir_a: yet_another_leaf_file
+      - sub_dir_c: sub_sub_dir_b
+      - sub_dir_c: sub_sub_dir_c
+</code></pre>
+
+I know, it's not as pretty as unix tree, but this IS github...
+
 h3. TODO
 
 * next task in a workflow should NOT run if the previous step failed

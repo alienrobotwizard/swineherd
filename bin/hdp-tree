@@ -1,0 +1,26 @@
+#!/usr/bin/env jruby
+
+require 'swineherd'
+
+#
+# Creates a 'tree' view of an hdfs path. It's not as pretty as the
+# unix tree command but that's only because I'm not smart enough to
+# print the hierarchy properly.
+#
+
+FS   = Swineherd::FileSystem.get(:hdfs)
+path = ARGV[0]
+
+# Recursively list paths
+def lr path
+  paths = FS.entries(path)
+  if (paths && !paths.empty?)
+    paths.map{|e| {File.basename(path) => lr(e)}}.flatten
+  else
+    File.basename(path)
+  end
+end
+
+
+tree = {path => lr(path)}.to_yaml
+puts tree
