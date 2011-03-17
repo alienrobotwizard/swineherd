@@ -22,5 +22,5 @@ def lr path
 end
 
 
-tree = {path => lr(path)}.to_yaml
+tree = {File.dirname(path) => lr(path)}.to_yaml
 puts tree
