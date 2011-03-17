@@ -101,6 +101,21 @@ module Swineherd
     end
 
     #
+    # BZIP 
+    #
+    def bzip input, output
+      system("#{@hadoop_home}/bin/hadoop \\
+       jar         #{@hadoop_home}/contrib/streaming/hadoop-*streaming*.jar	\\
+       -D          mapred.output.compress=true                                  \\
+       -D          mapred.output.compression.codec=org.apache.hadoop.io.compress.BZip2Codec  \\
+       -D          mapred.reduce.tasks=1                                        \\
+       -mapper     \"/bin/cat\"                                                 \\
+       -reducer	   \"/bin/cat\"                                                 \\
+       -input      \"#{input}\"                                                 \\
+       -output     \"#{output}\"")
+    end    
+
+    #
     # Copy hdfs file to local filesystem
     #
     def copy_to_local srcfile, dstfile
