@@ -21,7 +21,7 @@ module Swineherd::Script
     end
 
     def local_cmd
-      inputs = input.map{|path| path += "/*"}.join(',')
+      inputs = input.map{|path| path += File.directory?(path) ? "/*" : ""}.join(',')
       "ruby #{script} #{wukong_args(@options)} --run=local #{inputs} #{output.join(',')}"
     end
 
