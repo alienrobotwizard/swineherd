@@ -33,10 +33,12 @@ module Swineherd::Script
 
 
     def local_cmd
+      Log.info("Launching Pig script in local mode")
       "pig -x local #{pig_args(@options)} #{script}"
     end
 
     def cmd
+      Log.info("Launching Pig script in hadoop mode")
       "pig #{pig_args(@options)} #{script}"
     end
 

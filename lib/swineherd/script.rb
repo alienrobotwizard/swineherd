@@ -57,9 +57,15 @@ module Swineherd
       def run mode=:hadoop
         case mode
         when :local then
-          sh local_cmd
+          sh local_cmd do |res, ok|
+            Log.info("Exit status was #{ok}")
+            raise "Local mode script failed with exit status #{ok}" if ok != 0
+          end
         when :hadoop then
-          sh cmd
+          sh cmd do |res, ok|
+            Log.info("Exit status was #{ok}")
+            raise "Hadoop mode script failed with exit status #{ok}" if ok != 0
+          end
         end
       end
 

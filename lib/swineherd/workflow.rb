@@ -35,7 +35,9 @@ module Swineherd
     # Runs workflow starting with taskname
     #
     def run taskname
+      Log.info "Launching workflow task #{@flow_id}:#{taskname} ..."
       Rake::Task["#{@flow_id}:#{taskname}"].invoke
+      Log.info "Workflow task #{@flow_id}:#{taskname} finished"
     end
 
     #
@@ -43,7 +45,7 @@ module Swineherd
     #
     def describe
       Rake::Task.tasks.each do |t|
-        puts t.inspect if t.name =~ /#{@flow_id}/
+        Log.info("Task: #{t.name} [#{t.inspect}]") if t.name =~ /#{@flow_id}/
       end
     end
 

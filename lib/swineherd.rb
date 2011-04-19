@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'configliere' ; Configliere.use(:commandline, :env_var, :define)
 require 'rake'
+require 'gorillib/logger/log'
 
 module Swineherd
   autoload :Template,     'swineherd/template'
