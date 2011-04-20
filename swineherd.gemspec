@@ -48,6 +48,7 @@ Gem::Specification.new do |s|
     "lib/swineherd/workflow.rb",
     "lib/swineherd/workflow/job.rb",
     "notes.txt",
+    "swineherd.gemspec",
     "tests/test_filesystem.rb",
     "tests/test_s3_filesystem.rb",
     "tests/testcfg.yaml"
