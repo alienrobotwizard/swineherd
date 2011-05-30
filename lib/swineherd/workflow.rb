@@ -1,7 +1,10 @@
 module Swineherd
   class Workflow
     attr_accessor :workdir, :outputs, :output_counts
-
+    
+    # include the rake dsl (needed for rake 0.9.0)
+    include Rake::DSL if defined?(Rake::DSL)
+    
     #
     # Create a new workflow and new namespace for this workflow
     #
