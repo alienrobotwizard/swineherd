@@ -6,8 +6,6 @@ module Swineherd
     autoload :RScript,      'swineherd/script/r_script'
 
     module Common
-      # For rake 0.9 compatibility
-      include Rake
       
       attr_accessor :input, :output, :options, :attributes
       def initialize(source, input = [], output = [], options = {}, attributes ={})
