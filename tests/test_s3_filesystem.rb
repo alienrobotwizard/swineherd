@@ -38,8 +38,9 @@ current_test = 's3'
 describe "A new filesystem" do
 
   before do
-    @test_path  = "#{options['s3_test_bucket']}/tmp/rspec/test_path"
-    @test_path2 = "#{options['s3_test_bucket']}/tmp/rspec/test_path2"
+    @test_path   = "#{options['s3_test_bucket']}/tmp/rspec/test_path"
+    @test_path2  = "#{options['s3_test_bucket']}/tmp/rspec/test_path2"
+    @test_string = "@('_')@"     
     @fs = Swineherd::FileSystem.get(current_test, options['aws_access_key_id'], options['aws_secret_access_key'])
   end
 
@@ -56,6 +57,16 @@ describe "A new filesystem" do
     @fs.mkpath(@test_path)
     @fs.rm(@test_path)
     @fs.exists?(@test_path).should eql(false)
+  end
+
+  it "should implement size" do
+    @fs.mkpath(File.dirname(@test_path))
+    fileobj = @fs.open(@test_path, 'w')
+    fileobj.write(@test_string)
+    fileobj.close
+    7.should eql(@fs.size(@test_path))
+    @fs.rm(@test_path)
+    @fs.rm(File.dirname(@test_path))
   end
 
   it "should be able to copy paths" do

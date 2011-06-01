@@ -32,7 +32,22 @@ module Swineherd
       HadoopFile.new(path,mode,self,&blk)
     end
 
+    def size path
+      lr(path).inject(0){|sz, f| sz += @hdfs.get_file_status(Path.new(f)).get_len}
+    end
 
+    #
+    # Recursively list paths
+    #
+    def lr path
+      paths = entries(path)
+      if (paths && !paths.empty?)
+        paths.map{|e| lr(e)}.flatten
+      else
+        path
+      end
+    end
+    
     def rm path
       @hdfs.delete(Path.new(path), true)
       [path]
