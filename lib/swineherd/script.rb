@@ -6,6 +6,7 @@ module Swineherd
     autoload :RScript,      'swineherd/script/r_script'
 
     module Common
+      
       attr_accessor :input, :output, :options, :attributes
       def initialize(source, input = [], output = [], options = {}, attributes ={})
         @source     = source

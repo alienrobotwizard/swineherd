@@ -1,7 +1,7 @@
 module Swineherd
   class Workflow
     attr_accessor :workdir, :outputs, :output_counts
-
+    
     #
     # Create a new workflow and new namespace for this workflow
     #
