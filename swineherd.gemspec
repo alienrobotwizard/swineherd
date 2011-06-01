@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{swineherd}
-  s.version = "0.0.1"
+  s.version = "0.0.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jacob Perkins"]
-  s.date = %q{2011-04-20}
+  s.date = %q{2011-06-01}
   s.description = %q{Swineherd is for running scripts and workflows on filesystems.}
   s.email = %q{jacob.a.perkins@gmail.com}
   s.executables = ["hdp-tree", "hadoop-stream"]
@@ -39,6 +39,7 @@ Gem::Specification.new do |s|
     "lib/swineherd/filesystem/localfilesystem.rb",
     "lib/swineherd/filesystem/localfs.rb",
     "lib/swineherd/filesystem/s3filesystem.rb",
+    "lib/swineherd/foo",
     "lib/swineherd/script.rb",
     "lib/swineherd/script/hadoop_script.rb",
     "lib/swineherd/script/pig_script.rb",
@@ -56,7 +57,7 @@ Gem::Specification.new do |s|
   s.homepage = %q{http://github.com/Ganglion/swineherd}
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.3.7}
+  s.rubygems_version = %q{1.4.2}
   s.summary = %q{Flexible data workflow glue.}
   s.test_files = [
     "examples/pagerank/pagerank.rb",
@@ -64,7 +65,6 @@ Gem::Specification.new do |s|
   ]
 
   if s.respond_to? :specification_version then
-    current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
