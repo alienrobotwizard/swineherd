@@ -199,11 +199,11 @@ module Swineherd
     def put srcpath, destpath
       dest_bucket = bucket(destpath)
       if File.directory? srcpath
-
+	# handle Dir later
       else
         key = srcpath
       end
-      @s3.interface.put(dest_path, key, File.open(srcpath))
+      @s3.interface.put(dest_bucket, key, File.open(srcpath))
     end	
 
     def close *args
