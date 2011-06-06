@@ -195,6 +195,16 @@ module Swineherd
       uncommon_idx = dirs.transpose.each_with_index.find{|dirnames, idx| dirnames.uniq.length > 1}.last
       dirs[0][0...uncommon_idx].join('/')
     end
+	
+    def put srcpath, destpath
+      dest_bucket = bucket(destpath)
+      if File.directory? srcpath
+
+      else
+        key = srcpath
+      end
+      @s3.interface.put(dest_path, key, File.open(srcpath))
+    end	
 
     def close *args
     end
