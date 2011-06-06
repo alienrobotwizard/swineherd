@@ -181,6 +181,16 @@ module Swineherd
     def close *args
     end
 
+    def put srcpath, destpath
+      dest_bucket = bucket(destpath)
+      if File.directory? srcpath
+
+      else
+        key = srcpath
+      end
+      @s3.interface.put(dest_path, key, File.open(srcpath))
+    end
+
     class S3File
       attr_accessor :path, :handle, :fs
 
@@ -216,7 +226,7 @@ module Swineherd
       # downloading...
       #
       def readline
-        @handle ||= fs.s3.interface.get_object(fs.bucket(path), fs.key_path(path)).each        
+        @handle ||= fs.s3.interface.get_object(fs.bucket(path), fs.key_path(path)).each
         begin
           @handle.next
         rescue StopIteration, NoMethodError

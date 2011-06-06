@@ -101,19 +101,46 @@ module Swineherd
     end
 
     #
-    # BZIP 
+    # BZIP
     #
     def bzip input, output
       system("#{@hadoop_home}/bin/hadoop \\
-       jar         #{@hadoop_home}/contrib/streaming/hadoop-*streaming*.jar	\\
+       jar         #{@hadoop_home}/contrib/streaming/hadoop-*streaming*.jar     \\
        -D          mapred.output.compress=true                                  \\
        -D          mapred.output.compression.codec=org.apache.hadoop.io.compress.BZip2Codec  \\
        -D          mapred.reduce.tasks=1                                        \\
        -mapper     \"/bin/cat\"                                                 \\
-       -reducer	   \"/bin/cat\"                                                 \\
+       -reducer    \"/bin/cat\"                                                 \\
        -input      \"#{input}\"                                                 \\
        -output     \"#{output}\"")
-    end    
+    end
+
+    #
+    # Merges many input files into :reduce_tasks amount of output files
+    #
+    def dist_merge inputs, output, options = {}
+      options[:reduce_tasks]     ||= 25
+      options[:partition_fields] ||= 2
+      options[:sort_fields]      ||= 2
+      options[:field_separator]  ||= '/t'
+      names = inputs.map{|inp| File.basename(inp)}.join(',')
+      cmd   = "#{@hadoop_home}/bin/hadoop \\
+       jar         #{@hadoop_home}/contrib/streaming/hadoop-*streaming*.jar                   \\
+       -D          mapred.job.name=\"Swineherd Merge (#{names} -> #{output})\"               \\
+       -D          num.key.fields.for.partition=\"#{options[:partition_fields]}\"            \\
+       -D          stream.num.map.output.key.fields=\"#{options[:sort_fields]}\"             \\
+       -D          mapred.text.key.partitioner.options=\"-k1,#{options[:partition_fields]}\" \\
+       -D          stream.map.output.field.separator=\"'#{options[:field_separator]}'\"      \\
+       -D          mapred.min.split.size=1000000000                                          \\
+       -D          mapred.reduce.tasks=#{options[:reduce_tasks]}                             \\
+       -partitioner org.apache.hadoop.mapred.lib.KeyFieldBasedPartitioner                    \\
+       -mapper     \"/bin/cat\"                                                              \\
+       -reducer    \"/usr/bin/uniq\"                                                         \\
+       -input      \"#{inputs.join(',')}\"                                                   \\
+       -output     \"#{output}\""
+      puts cmd
+      system cmd
+    end
 
     #
     # Copy hdfs file to local filesystem
@@ -123,7 +150,7 @@ module Swineherd
     end
 
     #
-    # Copyy local file to hdfs filesystem
+    # Copy local file to hdfs filesystem
     #
     def copy_from_local srcfile, dstfile
       @hdfs.copy_from_local_file(Path.new(srcfile), Path.new(dstfile))
@@ -244,7 +271,7 @@ module Swineherd
       require 'java'
       @hadoop_conf = (ENV['HADOOP_CONF_DIR'] || File.join(@hadoop_home, 'conf'))
       @hadoop_conf += "/" unless @hadoop_conf.end_with? "/"
-      $CLASSPATH << @hadoop_conf 
+      $CLASSPATH << @hadoop_conf
       Dir["#{@hadoop_home}/hadoop*.jar", "#{@hadoop_home}/lib/*.jar"].each{|jar| require jar}
 
       java_import 'org.apache.hadoop.conf.Configuration'
