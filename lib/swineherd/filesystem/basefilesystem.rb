@@ -22,6 +22,12 @@ module Swineherd
     end
 
     #
+    # Recursively measure the size of path. Results in bytes.
+    #
+    def size path
+    end
+    
+    #
     # Recursively delete the path and all paths below it.
     #
     def rm path

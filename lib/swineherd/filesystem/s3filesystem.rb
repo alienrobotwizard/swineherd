@@ -22,6 +22,24 @@ module Swineherd
       S3File.new(path,mode,self,&blk)
     end
 
+    def size path
+      sz = 0
+      if type(path) == "directory"
+        lr(path).each do |f|
+          sz += file_size(f)
+        end        
+      else
+        sz += file_size(path)
+      end
+      sz
+    end    
+
+    def file_size path
+      containing_bucket = bucket(path)
+      header            = @s3.interface.head(containing_bucket, key_path(path))
+      header['content-length'].to_i
+    end
+    
     def rm path
       bkt = bucket(path)
       key = key_path(path)

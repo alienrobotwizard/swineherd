@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'find'
 module Swineherd
 
   class LocalFileSystem
@@ -12,6 +13,12 @@ module Swineherd
       return LocalFile.new path, mode, &blk
     end
 
+    def size path
+      sz = 0
+      Find.find(path){|f| sz += File.size(f)}
+      sz
+    end
+    
     def rm path
       FileUtils.rm_r path
     end
