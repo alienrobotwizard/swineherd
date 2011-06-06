@@ -209,16 +209,6 @@ module Swineherd
     def close *args
     end
 
-    def put srcpath, destpath
-      dest_bucket = bucket(destpath)
-      if File.directory? srcpath
-
-      else
-        key = srcpath
-      end
-      @s3.interface.put(dest_path, key, File.open(srcpath))
-    end
-
     class S3File
       attr_accessor :path, :handle, :fs
 
