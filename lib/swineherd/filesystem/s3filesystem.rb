@@ -148,13 +148,14 @@ module Swineherd
     end
 
     # right now this only works on single files
-    def cp_to_local srcpath, dstpath
+    def copy_to_local srcpath, dstpath
       src_bucket   = bucket(srcpath)
       src_key_path = key_path(srcpath)
       dstfile      = File.new(dstpath, 'w')
       @s3.interface.get(src_bucket, src_key_path) do |chunk|
         dstfile.write(chunk)
       end
+      dstfile.close
     end 
 
     # This is a bit funny, there's actually no need to create a 'path' since
