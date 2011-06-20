@@ -147,7 +147,16 @@ module Swineherd
       end
     end
 
-    #
+    # right now this only works on single files
+    def cp_to_local srcpath, dstpath
+      src_bucket   = bucket(srcpath)
+      src_key_path = key_path(srcpath)
+      dstfile      = File.new(dstpath, 'w')
+      @s3.interface.get(src_bucket, src_key_path) do |chunk|
+        dstfile.write(chunk)
+      end
+    end 
+
     # This is a bit funny, there's actually no need to create a 'path' since
     # s3 is nothing more than a glorified key-value store. When you create a
     # 'file' (key) the 'path' will be created for you. All we do here is create
