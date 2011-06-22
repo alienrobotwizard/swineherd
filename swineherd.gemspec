@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{swineherd}
-  s.version = "0.0.3"
+  s.version = "0.0.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jacob Perkins"]
-  s.date = %q{2011-06-21}
+  s.date = %q{2011-06-22}
   s.description = %q{Swineherd is for running scripts and workflows on filesystems.}
   s.email = %q{jacob.a.perkins@gmail.com}
   s.executables = ["hdp-tree", "hadoop-stream"]
@@ -58,10 +58,6 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.7}
   s.summary = %q{Flexible data workflow glue.}
-  s.test_files = [
-    "examples/pagerank/pagerank.rb",
-    "examples/pagerank/scripts/cut_off_list.rb"
-  ]
 
   if s.respond_to? :specification_version then
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
